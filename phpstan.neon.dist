@@ -1,0 +1,12 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - config
+    tmpDir: build/phpstan
+    ignoreErrors:
+        # Larastan flags env() outside Laravel's project-root config/ directory,
+        # but in a package context the package's own config/ IS the config dir.
+        -
+            identifier: larastan.noEnvCallsOutsideOfConfig
+            path: config/exact.php

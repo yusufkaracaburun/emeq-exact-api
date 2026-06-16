@@ -1,0 +1,329 @@
+{
+	"info": {
+		"_postman_id": "ccfa9914-76fc-3265-6622-3c792e172885",
+		"name": "OAUTH",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://start.exactonline.nl/api/oauth2/auth?client_id=XXXXXXXXXXXXXXX&redirect_uri=XXXXXXXXXXXXXXX&response_type=code",
+					"protocol": "https",
+					"host": [
+						"start",
+						"exactonline",
+						"nl"
+					],
+					"path": [
+						"api",
+						"oauth2",
+						"auth"
+					],
+					"query": [
+						{
+							"key": "client_id",
+							"value": "XXXXXXXXXXXXXXX"
+						},
+						{
+							"key": "redirect_uri",
+							"value": "XXXXXXXXXXXXXXX"
+						},
+						{
+							"key": "response_type",
+							"value": "code"
+						}
+					]
+				},
+				"description": "Execute this request in your browser.\nOnce redirected to the callback url, copy the code and use in in the First Token Request."
+			},
+			"response": []
+		},
+		{
+			"name": "2. First Token Request",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "authorization_code",
+							"type": "text"
+						},
+						{
+							"key": "client_id",
+							"value": "XXXXXXXXXXXXXXX",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "XXXXXXXXXXXXXXX",
+							"type": "text"
+						},
+						{
+							"key": "redirect_uri",
+							"value": "XXXXXXXXXXXXXXX",
+							"type": "text"
+						},
+						{
+							"key": "code",
+							"value": "XXXXXXXXXXXXXXX",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://start.exactonline.nl/api/oauth2/token",
+					"protocol": "https",
+					"host": [
+						"start",
+						"exactonline",
+						"nl"
+					],
+					"path": [
+						"api",
+						"oauth2",
+						"token"
+					]
+				},
+				"description": "Enter new code in the body of this request\nCopy the received refresh token so you can used in the the \"Refresh Token\" request."
+			},
+			"response": [
+				{
+					"name": "expires in",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"enabled": true,
+								"description": "The mime type of this content"
+							},
+							{
+								"key": "accept",
+								"value": "application/json",
+								"enabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "b562d1c7-5b89-4090-b327-5127c2c0b6d0",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "YPn4gi3Geo1z",
+									"type": "text"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "https://www.getpostman.com/oauth2/callback",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "lyqb!IAAAAOum32TqM1b0M0yfV5udiPkqI7HmHttAc1REEVk484fK8QAAAAHfqAXlL7Ln9ndoGEIvf6uToNbgIsmL-06HsyM5CuDC_dJY6DBbx8nYADbyaAMZexy6rCh6SRSpXwPO6P_YwdiiGGGek6jrqZ_GWnhdd9t12AOBt877QtkmH8OxF8koKUUA76IS8EiMH-DY702Edm-mMXgCGrPbTVyzhO4NKecMGT6uKxRyu9kxBC3pe41J-yYKYgyHaXHMwvBAOMduodXNATqyfqbpTLlilhgqFm92SOmMLngsrrLk-4n9B2ShdHtk4LpYuD-vVewYHQORilfadNO0UzE3aKXJ-mLOBAgao4bjTDgv99B9cuj6TPjvBwk",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://start.exactonline.nl/api/oauth2/token",
+							"protocol": "https",
+							"host": [
+								"start",
+								"exactonline",
+								"nl"
+							],
+							"path": [
+								"api",
+								"oauth2",
+								"token"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "javascript",
+					"header": [
+						{
+							"key": "Cache-Control",
+							"value": "private",
+							"name": "Cache-Control",
+							"description": ""
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive",
+							"name": "Connection",
+							"description": ""
+						},
+						{
+							"key": "Content-Length",
+							"value": "902",
+							"name": "Content-Length",
+							"description": ""
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8",
+							"name": "Content-Type",
+							"description": ""
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 12 Oct 2016 11:18:38 GMT",
+							"name": "Date",
+							"description": ""
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache",
+							"name": "Pragma",
+							"description": ""
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=31536000; includeSubDomains",
+							"name": "Strict-Transport-Security",
+							"description": ""
+						}
+					],
+					"cookie": [],
+					"body": "{\"access_token\":\"gAAAAD6yfdXlKODR6o9nqDzRvGXmxaREW-e3nnsHo7VoIQ-ZhE9v9uB-C2IdIFKxPJ8euxxznTdR1o87eA_0mAkiCq6Wq0VFGZGFXMwNyxAovADyRDMxvkMAYlTiqHHJbZL6cpq1iySNCXcSGaySkPUsmTqbFNRyPdGCUdXVp2dTB08PFAEAAIAAAACS1Nu5KTyuX6nt_Slla8eD69TfOk1rB03h0ayCIuCFZkGSlz7jBgT8j8lOovf9quGGiw04xB1gBpIsVnW8R1Cyn2If_bAWhh0bwvts-r71oXPvg1jC3ddQLUHzo2fpZ2ixiSRqOK5Y8Bdsxb47vp2-Mb5k1H0JUMm8kAedhrrQbUxYhFDLj6btXdAz1kEQZgXdia-K_9cI32oxaL_mVVX87Skamlb_10htt4277ZtLNFHGKAxyv7wrG0T3iFMfhApXDbrYr64ZdfjqZSYgl-TVrRyjx19-dy_xiq-rpqUqPKJbJI_X0CYBluWWzsCplYD6fYlpPUF-F68MQV7N5fWMX3gWROsekEzbfc2Kg273Nw\",\"token_type\":\"bearer\",\"expires_in\":\"600\",\"refresh_token\":\"4dCx!IAAAAA8KYxoedBXccdeAGPQECxFSjZx1b7z0JDqIq6pPKfFIoQAAAAHQIICmukT1bb7DCe50GW8L_dDbSVFE38nzTK0JMiTPV0NjBT3K63jIHaMCyocyQwIktZ_n87jqjtzuO9eL_nhj0_m0osDbQN_x4nC5xnGRInv55A0UekNzdtgc5y4PkXoXKxGUF_6oRDEBFHh_b9onhvde1mKcyGd7bZ55QHbKETTUwfbYVI-26bXbjgLXGTHb8ECuy8tDpWlFFrFmc0ya\"}"
+				}
+			]
+		},
+		{
+			"name": "3. Refresh Token",
+			"request": {
+				"auth": {
+					"type": "oauth2",
+					"oauth2": [
+						{
+							"key": "accessToken",
+							"value": "gAAAAGJeIsBdCYsEPCHA4lhkRrZTNGlU5A1xNQBRFtgmq5aMf_uArOGje0YHkRSS7gSMbE8nznVb9lu_OURKcdqcE0bMBB-Vdx8bPrrTXQRdK454W6nmv9EY_hZTF9rdaK70c3gRkAOKbordScA_RA_AV49JrgHk2laKz6Gx5-1_e-3CVAEAAIAAAAC5rLbyBNt9eZeEmhn4Zv9O8nF_v5ch3XpT-WPrc7688H1qiAF9wn8via9xB3YJUOTd93hSgNcOFkKGVWvOZTC-COpLhuL8LPPqnEuiOTtPenSxHnoV0sNs7ZXMzX8KE7alxBOmE-vi4eWqpZx2h1XBN4WOx_Z7B5ZIMULTCqPcYSIcM4Q1yhgCMW3K9_IwXepdcE7G9_7PFD5XNRep31uAYyvYZ8ji8BinNkxAovPmm_6uDGveXdJk6DquY-eWKrUuc45Ahu9oQ7ZJHK3JbaUTzUVz8GVFMfBfgkm9DsTqMaY8rGuvNsPb6M4YPgQffDrFJCY23J2coYEK54NkDZArl9N37gCQd1nDVChUPIDX-KrfFuCfnzcvcZJZwhsJ-3ZhJtxvmFhU0t2rulv-I8lGNR1cxVPPotqChibTY_ss_mEEg4nmdWUzo28xg3qaww4",
+							"type": "string"
+						},
+						{
+							"key": "tokenType",
+							"value": "bearer",
+							"type": "string"
+						},
+						{
+							"key": "addTokenTo",
+							"value": "header",
+							"type": "string"
+						},
+						{
+							"key": "callBackUrl",
+							"type": "any"
+						},
+						{
+							"key": "authUrl",
+							"type": "any"
+						},
+						{
+							"key": "accessTokenUrl",
+							"type": "any"
+						},
+						{
+							"key": "clientId",
+							"type": "any"
+						},
+						{
+							"key": "clientSecret",
+							"type": "any"
+						},
+						{
+							"key": "clientAuth",
+							"type": "any"
+						},
+						{
+							"key": "grantType",
+							"type": "any"
+						},
+						{
+							"key": "scope",
+							"type": "any"
+						},
+						{
+							"key": "username",
+							"type": "any"
+						},
+						{
+							"key": "password",
+							"type": "any"
+						},
+						{
+							"key": "redirectUri",
+							"type": "any"
+						},
+						{
+							"key": "refreshToken",
+							"type": "any"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "refresh_token",
+							"type": "text"
+						},
+						{
+							"key": "refresh_token",
+							"value": "XXXXXXXXXXXXXXX",
+							"type": "text"
+						},
+						{
+							"key": "client_id",
+							"value": "XXXXXXXXXXXXXXX",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "XXXXXXXXXXXXXXX",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://start.exactonline.nl/api/oauth2/token",
+					"protocol": "https",
+					"host": [
+						"start",
+						"exactonline",
+						"nl"
+					],
+					"path": [
+						"api",
+						"oauth2",
+						"token"
+					]
+				},
+				"description": "Enter refresh token received as response of the \"First Token Request\" in the body of this request"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
