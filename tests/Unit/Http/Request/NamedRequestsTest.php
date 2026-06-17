@@ -6,6 +6,9 @@ use Emeq\ExactApi\Http\Request\Read\GetGlAccounts;
 use Emeq\ExactApi\Http\Request\Read\GetJournals;
 use Emeq\ExactApi\Http\Request\Read\GetRelations;
 use Emeq\ExactApi\Http\Request\Read\GetVatCodes;
+use Emeq\ExactApi\Enums\ExactDocumentType;
+use Emeq\ExactApi\Http\Request\Write\CreateDocument;
+use Emeq\ExactApi\Http\Request\Write\CreateDocumentAttachment;
 use Emeq\ExactApi\Http\Request\Write\CreateGeneralJournalEntry;
 use Emeq\ExactApi\Http\Request\Write\CreatePurchaseEntry;
 use Emeq\ExactApi\Http\Request\Write\CreateSalesEntry;
@@ -113,4 +116,56 @@ it('CreateGeneralJournalEntry omits header Description and line VATCode', functi
                 ['Description' => 'Regel 1', 'AmountDC' => 12.34, 'GLAccount' => 'gl-guid'],
             ],
         ]);
+});
+
+it('CreateDocument maps neutral input onto the Exact Documents body', function (): void {
+    $request = new CreateDocument(
+        subject: 'INV-1',
+        type: ExactDocumentType::SalesInvoice->value,
+        account: 'cust-guid',
+        financialTransactionEntryId: 'entry-guid',
+    );
+
+    expect($request->getMethod())->toBe(Method::POST)
+        ->and($request->resolveEndpoint())->toBe('/documents/Documents')
+        ->and($request->body()->all())->toBe([
+            'Subject'                     => 'INV-1',
+            'Type'                        => 10,
+            'Account'                     => 'cust-guid',
+            'FinancialTransactionEntryID' => 'entry-guid',
+        ]);
+});
+
+it('CreateDocument drops null Account and FinancialTransactionEntryID', function (): void {
+    $request = new CreateDocument(
+        subject: 'Los bonnetje',
+        type: ExactDocumentType::Miscellaneous->value,
+    );
+
+    expect($request->body()->all())->toBe([
+        'Subject' => 'Los bonnetje',
+        'Type'    => 55,
+    ]);
+});
+
+it('CreateDocumentAttachment carries the base64 payload', function (): void {
+    $request = new CreateDocumentAttachment(
+        document: 'doc-guid',
+        fileName: 'factuur.pdf',
+        attachment: 'JVBERi0xLjQK',
+    );
+
+    expect($request->getMethod())->toBe(Method::POST)
+        ->and($request->resolveEndpoint())->toBe('/documents/DocumentAttachments')
+        ->and($request->body()->all())->toBe([
+            'Document'   => 'doc-guid',
+            'FileName'   => 'factuur.pdf',
+            'Attachment' => 'JVBERi0xLjQK',
+        ]);
+});
+
+it('ExactDocumentType maps the creatable Exact document-type ids', function (): void {
+    expect(ExactDocumentType::SalesInvoice->value)->toBe(10)
+        ->and(ExactDocumentType::PurchaseInvoice->value)->toBe(20)
+        ->and(ExactDocumentType::Miscellaneous->value)->toBe(55);
 });
