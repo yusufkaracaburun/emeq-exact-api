@@ -68,4 +68,19 @@ final class Envelope
 
         return null !== $id ? (string) $id : null;
     }
+
+    /**
+     * De GUID van het Document dat Exact bij een create automatisch koppelt — staat op
+     * `d.Document`. PurchaseEntries krijgen er één (inkoopfactuur-registratie); SalesEntries
+     * niet → null. Hiermee koppelt de caller een bijlage aan het bestaande Document i.p.v.
+     * een tweede aan te maken.
+     *
+     * @param  array<string, mixed>|null  $json
+     */
+    public static function documentRef(?array $json): ?string
+    {
+        $ref = $json['d']['Document'] ?? null;
+
+        return (null !== $ref && '' !== $ref) ? (string) $ref : null;
+    }
 }

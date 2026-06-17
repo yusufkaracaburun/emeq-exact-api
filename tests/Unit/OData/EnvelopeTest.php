@@ -42,3 +42,10 @@ it('returns null when no id is present', function (): void {
     expect(Envelope::firstId(null))->toBeNull()
         ->and(Envelope::firstId(['d' => ['Code' => '8000']]))->toBeNull();
 });
+
+it('extracts the auto-linked Document ref (purchase) and null otherwise (sales)', function (): void {
+    expect(Envelope::documentRef(['d' => ['EntryID' => 'pe-1', 'Document' => 'doc-guid']]))->toBe('doc-guid')
+        ->and(Envelope::documentRef(['d' => ['EntryID' => 'se-1', 'Document' => null]]))->toBeNull()
+        ->and(Envelope::documentRef(['d' => ['EntryID' => 'se-2']]))->toBeNull()
+        ->and(Envelope::documentRef(null))->toBeNull();
+});

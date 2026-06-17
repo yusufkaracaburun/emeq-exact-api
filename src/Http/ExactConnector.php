@@ -11,6 +11,7 @@ use Emeq\ExactApi\Exceptions\RateLimitException;
 use Emeq\ExactApi\Exceptions\ServerException;
 use Emeq\ExactApi\Exceptions\ValidationException;
 use Saloon\Contracts\Authenticator;
+use Saloon\Enums\Method;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\Connector;
@@ -54,6 +55,19 @@ class ExactConnector extends Connector
 
     public function handleRetry(FatalRequestException|RequestException $exception, Request $request): bool
     {
+        // 429 (rate limit) is altijd veilig om te retryen: de request is niet verwerkt.
+        if ($exception instanceof RequestException && 429 === $exception->getResponse()->status()) {
+            return true;
+        }
+
+        // POST is niet-idempotent en Exact kent géén idempotency-key. Een create die
+        // terugkomt met een transient 5xx — óf een verbroken verbinding ná verwerking —
+        // mag NIET opnieuw: dat zou dubbel boeken/aanmaken (dubbele omzet/kosten). Alleen
+        // idempotente methodes (GET/PUT/DELETE) retryen we op zulke transient fouten.
+        if (Method::POST === $request->getMethod()) {
+            return false;
+        }
+
         if ($exception instanceof FatalRequestException) {
             return true;
         }

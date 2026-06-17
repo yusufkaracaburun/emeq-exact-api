@@ -10,9 +10,19 @@ use Emeq\ExactApi\Exceptions\NotFoundException;
 use Emeq\ExactApi\Exceptions\RateLimitException;
 use Emeq\ExactApi\Exceptions\ServerException;
 use Emeq\ExactApi\Exceptions\ValidationException;
+use Saloon\Enums\Method;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\PendingRequest;
+
+/** Request-mock met een vaste HTTP-methode voor de retry-tests. */
+function requestWithMethod(Method $method): Saloon\Http\Request
+{
+    $request = test()->createMock(Saloon\Http\Request::class);
+    $request->method('getMethod')->willReturn($method);
+
+    return $request;
+}
 
 it('resolves the division-scoped base URL', function (): void {
     expect(makeExactConnector('4471372')->resolveBaseUrl())->toBe('https://start.exactonline.nl/api/v1/4471372')
@@ -76,17 +86,41 @@ it('returns null for unmapped 2xx/3xx', function (int $status): void {
 it('handleRetry true for FatalRequestException', function (): void {
     $fatal = new FatalRequestException(new RuntimeException('refused'), test()->createMock(PendingRequest::class));
 
-    expect(makeExactConnector()->handleRetry($fatal, test()->createMock(Saloon\Http\Request::class)))->toBeTrue();
+    expect(makeExactConnector()->handleRetry($fatal, requestWithMethod(Method::GET)))->toBeTrue();
 });
 
 it('handleRetry true for retryable statuses', function (int $status): void {
     $exception = new RequestException(fakeExactResponse($status, 'retry'), message: 'stub');
 
-    expect(makeExactConnector()->handleRetry($exception, test()->createMock(Saloon\Http\Request::class)))->toBeTrue();
+    expect(makeExactConnector()->handleRetry($exception, requestWithMethod(Method::GET)))->toBeTrue();
 })->with([429, 500, 502, 503, 504]);
 
 it('handleRetry false for non-retryable 4xx', function (int $status): void {
     $exception = new RequestException(fakeExactResponse($status, 'no'), message: 'stub');
 
-    expect(makeExactConnector()->handleRetry($exception, test()->createMock(Saloon\Http\Request::class)))->toBeFalse();
+    expect(makeExactConnector()->handleRetry($exception, requestWithMethod(Method::GET)))->toBeFalse();
 })->with([400, 401, 404]);
+
+it('handleRetry false for a POST on transient 5xx (geen dubbele boeking)', function (int $status): void {
+    $exception = new RequestException(fakeExactResponse($status, 'boom'), message: 'stub');
+
+    expect(makeExactConnector()->handleRetry($exception, requestWithMethod(Method::POST)))->toBeFalse();
+})->with([500, 502, 503, 504]);
+
+it('handleRetry false for a POST on a fatal connection error', function (): void {
+    $fatal = new FatalRequestException(new RuntimeException('refused'), test()->createMock(PendingRequest::class));
+
+    expect(makeExactConnector()->handleRetry($fatal, requestWithMethod(Method::POST)))->toBeFalse();
+});
+
+it('handleRetry true for a POST on 429 (rate limit is niet verwerkt)', function (): void {
+    $exception = new RequestException(fakeExactResponse(429, 'slow'), message: 'stub');
+
+    expect(makeExactConnector()->handleRetry($exception, requestWithMethod(Method::POST)))->toBeTrue();
+});
+
+it('handleRetry true for an idempotent GET on transient 5xx', function (int $status): void {
+    $exception = new RequestException(fakeExactResponse($status, 'boom'), message: 'stub');
+
+    expect(makeExactConnector()->handleRetry($exception, requestWithMethod(Method::GET)))->toBeTrue();
+})->with([500, 502, 503, 504]);

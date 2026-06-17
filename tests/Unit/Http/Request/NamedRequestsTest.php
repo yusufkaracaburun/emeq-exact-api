@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use Emeq\ExactApi\Enums\ExactDocumentType;
 use Emeq\ExactApi\Http\Request\Read\GetGlAccounts;
 use Emeq\ExactApi\Http\Request\Read\GetJournals;
 use Emeq\ExactApi\Http\Request\Read\GetRelations;
 use Emeq\ExactApi\Http\Request\Read\GetVatCodes;
-use Emeq\ExactApi\Enums\ExactDocumentType;
 use Emeq\ExactApi\Http\Request\Write\CreateDocument;
 use Emeq\ExactApi\Http\Request\Write\CreateDocumentAttachment;
 use Emeq\ExactApi\Http\Request\Write\CreateGeneralJournalEntry;
@@ -98,6 +98,22 @@ it('CreatePurchaseEntry maps neutral input onto the Exact PurchaseEntries body',
                 ['Description' => 'Regel 1', 'AmountFC' => 80.0, 'VATCode' => '5', 'GLAccount' => 'gl-guid'],
             ],
         ]);
+});
+
+it('CreateSalesEntry adds YourRef when given and omits it otherwise', function (): void {
+    $without = new CreateSalesEntry(customer: 'c', entryDate: '2026-06-17', journal: '80', description: 'x', lines: [['amount' => 10]]);
+    $with    = new CreateSalesEntry(customer: 'c', entryDate: '2026-06-17', journal: '80', description: 'x', lines: [['amount' => 10]], yourRef: 'system · INV-1');
+
+    expect($without->body()->all())->not->toHaveKey('YourRef')
+        ->and($with->body()->all()['YourRef'])->toBe('system · INV-1');
+});
+
+it('CreatePurchaseEntry adds YourRef when given and omits it otherwise', function (): void {
+    $without = new CreatePurchaseEntry(supplier: 's', entryDate: '2026-06-17', journal: '70', description: 'x', lines: [['amount' => 10]]);
+    $with    = new CreatePurchaseEntry(supplier: 's', entryDate: '2026-06-17', journal: '70', description: 'x', lines: [['amount' => 10]], yourRef: 'system · PINV-1');
+
+    expect($without->body()->all())->not->toHaveKey('YourRef')
+        ->and($with->body()->all()['YourRef'])->toBe('system · PINV-1');
 });
 
 it('CreateGeneralJournalEntry omits header Description and line VATCode', function (): void {

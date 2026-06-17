@@ -32,6 +32,7 @@ final class CreateSalesEntry extends BaseRequest implements HasBody
         private readonly string $journal,
         private readonly ?string $description,
         private readonly array $lines,
+        private readonly ?string $yourRef = null,
     ) {
     }
 
@@ -45,7 +46,7 @@ final class CreateSalesEntry extends BaseRequest implements HasBody
      */
     protected function defaultBody(): array
     {
-        return [
+        $body = [
             'Customer'        => $this->customer,
             'EntryDate'       => $this->entryDate,
             'Journal'         => $this->journal,
@@ -60,5 +61,12 @@ final class CreateSalesEntry extends BaseRequest implements HasBody
                 $this->lines,
             ),
         ];
+
+        // YourRef = herkomst/traceability (consumer + external_id), gezet door de caller.
+        if (null !== $this->yourRef) {
+            $body['YourRef'] = $this->yourRef;
+        }
+
+        return $body;
     }
 }
