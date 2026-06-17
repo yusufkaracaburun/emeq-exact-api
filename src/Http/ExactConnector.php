@@ -8,6 +8,7 @@ use Emeq\ExactApi\Auth\OAuthAuthenticator;
 use Emeq\ExactApi\Exceptions\AuthenticationException;
 use Emeq\ExactApi\Exceptions\NotFoundException;
 use Emeq\ExactApi\Exceptions\RateLimitException;
+use Emeq\ExactApi\Exceptions\RequestTooBroadException;
 use Emeq\ExactApi\Exceptions\ServerException;
 use Emeq\ExactApi\Exceptions\ValidationException;
 use Saloon\Contracts\Authenticator;
@@ -29,6 +30,20 @@ use Throwable;
  */
 class ExactConnector extends Connector
 {
+    /**
+     * De quota-stand-headers die Exact op elke division-scoped respons meestuurt.
+     * Single source — de Hub stuurt exact deze set door naar de consumer.
+     *
+     * @var list<string>
+     */
+    public const RATE_LIMIT_HEADERS = [
+        'X-RateLimit-Limit',
+        'X-RateLimit-Remaining',
+        'X-RateLimit-Reset',
+        'X-RateLimit-Minutely-Limit',
+        'X-RateLimit-Minutely-Remaining',
+    ];
+
     private readonly OAuthAuthenticator $oauthAuthenticator;
 
     /**
@@ -84,8 +99,9 @@ class ExactConnector extends Connector
             400 === $status                  => ValidationException::fromBody($body),
             401 === $status, 403 === $status => AuthenticationException::apiUnauthorized($status, $body),
             404 === $status                  => NotFoundException::forUrl((string) $response->getPendingRequest()->getUrl()),
-            429 === $status                  => RateLimitException::fromBody($body, self::parseRetryAfter($response)),
-            $status >= 500 && $status < 600  => ServerException::fromResponse($status, $body),
+            408 === $status                  => RequestTooBroadException::fromBody($body),
+            429 === $status                  => RateLimitException::fromBody($body, self::parseRetryAfter($response), self::rateLimitHeaders($response)),
+            $status >= 500 && $status < 600  => ServerException::fromResponse($status, $body, self::parseRetryAfter($response)),
             default                          => null,
         };
     }
@@ -119,5 +135,23 @@ class ExactConnector extends Connector
         }
 
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function rateLimitHeaders(Response $response): array
+    {
+        $out = [];
+
+        foreach (self::RATE_LIMIT_HEADERS as $name) {
+            $value = $response->header($name);
+
+            if (is_string($value) && '' !== $value) {
+                $out[$name] = $value;
+            }
+        }
+
+        return $out;
     }
 }

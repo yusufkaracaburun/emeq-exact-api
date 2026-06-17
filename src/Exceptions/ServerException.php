@@ -10,9 +10,23 @@ namespace Emeq\ExactApi\Exceptions;
  */
 final class ServerException extends ExactException
 {
-    public static function fromResponse(int $status, string $body): self
+    public function __construct(
+        string $message,
+        public readonly int $status = 500,
+        public readonly string $rawBody = '',
+        public readonly ?int $retryAfterSeconds = null,
+    ) {
+        parent::__construct($message);
+    }
+
+    public static function fromResponse(int $status, string $body, ?int $retryAfterSeconds = null): self
     {
-        return new self(sprintf('Exact API gaf HTTP %d. Body: %s', $status, self::truncate($body)));
+        return new self(
+            sprintf('Exact API gaf HTTP %d. Body: %s', $status, self::truncate($body)),
+            $status,
+            $body,
+            $retryAfterSeconds,
+        );
     }
 
     private static function truncate(string $body, int $max = 500): string

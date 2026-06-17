@@ -8,6 +8,7 @@ use Emeq\ExactApi\Contracts\TokenStore;
 use Emeq\ExactApi\Exceptions\AuthenticationException;
 use Emeq\ExactApi\Exceptions\NotFoundException;
 use Emeq\ExactApi\Exceptions\RateLimitException;
+use Emeq\ExactApi\Exceptions\RequestTooBroadException;
 use Emeq\ExactApi\Exceptions\ServerException;
 use Emeq\ExactApi\Exceptions\ValidationException;
 use Saloon\Enums\Method;
@@ -47,12 +48,21 @@ it('maps HTTP 400 to ValidationException and surfaces the OData message', functi
         ->and($exception->getMessage())->toContain('Veld ontbreekt');
 });
 
-it('maps HTTP 401 and 403 to AuthenticationException', function (int $status): void {
+it('maps HTTP 401 and 403 to AuthenticationException carrying the upstream status', function (int $status): void {
     $exception = makeExactConnector()->getRequestException(fakeExactResponse($status, 'nope'), null);
 
     expect($exception)->toBeInstanceOf(AuthenticationException::class)
-        ->and($exception->getMessage())->toContain("HTTP {$status}");
+        ->and($exception->getMessage())->toContain("HTTP {$status}")
+        ->and($exception->apiStatus)->toBe($status);
 })->with([401, 403]);
+
+it('maps HTTP 408 to RequestTooBroadException with the raw body', function (): void {
+    $exception = makeExactConnector()->getRequestException(fakeExactResponse(408, 'too broad'), null);
+
+    expect($exception)->toBeInstanceOf(RequestTooBroadException::class)
+        ->and($exception->getMessage())->toContain('408')
+        ->and($exception->rawBody)->toBe('too broad');
+});
 
 it('maps HTTP 404 to NotFoundException with the URL', function (): void {
     $exception = makeExactConnector()->getRequestException(
@@ -72,11 +82,33 @@ it('maps HTTP 429 to RateLimitException and parses Retry-After', function (): vo
         ->and($exception->retryAfterSeconds)->toBe(42);
 });
 
-it('maps transient 5xx to ServerException', function (int $status): void {
-    $exception = makeExactConnector()->getRequestException(fakeExactResponse($status, 'boom'), null);
+it('maps HTTP 429 carrying the X-RateLimit-* quota headers', function (): void {
+    $exception = makeExactConnector()->getRequestException(fakeExactResponse(429, 'slow', headers: [
+        'X-RateLimit-Remaining'          => '0',
+        'X-RateLimit-Reset'              => '1718700000000',
+        'X-RateLimit-Minutely-Remaining' => '0',
+        'Some-Other-Header'              => 'ignored',
+    ]), null);
+
+    expect($exception)->toBeInstanceOf(RateLimitException::class)
+        ->and($exception->rateLimitHeaders)->toBe([
+            'X-RateLimit-Remaining'          => '0',
+            'X-RateLimit-Reset'              => '1718700000000',
+            'X-RateLimit-Minutely-Remaining' => '0',
+        ]);
+});
+
+it('maps transient 5xx to ServerException carrying status, body and Retry-After', function (int $status): void {
+    $exception = makeExactConnector()->getRequestException(
+        fakeExactResponse($status, '{"error":{"message":{"value":"boom"}}}', retryAfter: '120'),
+        null,
+    );
 
     expect($exception)->toBeInstanceOf(ServerException::class)
-        ->and($exception->getMessage())->toContain("HTTP {$status}");
+        ->and($exception->getMessage())->toContain("HTTP {$status}")
+        ->and($exception->status)->toBe($status)
+        ->and($exception->rawBody)->toContain('boom')
+        ->and($exception->retryAfterSeconds)->toBe(120);
 })->with([500, 502, 503, 504]);
 
 it('returns null for unmapped 2xx/3xx', function (int $status): void {
@@ -99,7 +131,7 @@ it('handleRetry false for non-retryable 4xx', function (int $status): void {
     $exception = new RequestException(fakeExactResponse($status, 'no'), message: 'stub');
 
     expect(makeExactConnector()->handleRetry($exception, requestWithMethod(Method::GET)))->toBeFalse();
-})->with([400, 401, 404]);
+})->with([400, 401, 404, 408]);
 
 it('handleRetry false for a POST on transient 5xx (geen dubbele boeking)', function (int $status): void {
     $exception = new RequestException(fakeExactResponse($status, 'boom'), message: 'stub');

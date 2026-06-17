@@ -109,20 +109,28 @@ function makeExactConnector(string $division = '4471372'): ExactConnector
     );
 }
 
+/**
+ * @param  array<string, string>  $headers  Extra response-headers (bv. X-RateLimit-*).
+ */
 function fakeExactResponse(
     int $status,
     string $body = '{}',
     ?string $retryAfter = null,
     string $url = 'https://start.exactonline.nl/api/v1/4471372/crm/Accounts',
+    array $headers = [],
 ): Response {
     $pendingRequest = test()->createMock(PendingRequest::class);
     $pendingRequest->method('getUrl')->willReturn($url);
+
+    if (null !== $retryAfter) {
+        $headers['Retry-After'] = $retryAfter;
+    }
 
     $response = test()->createMock(Response::class);
     $response->method('status')->willReturn($status);
     $response->method('body')->willReturn($body);
     $response->method('header')->willReturnCallback(
-        static fn (string $name) => 'Retry-After' === $name ? $retryAfter : null,
+        static fn (string $name) => $headers[$name] ?? null,
     );
     $response->method('getPendingRequest')->willReturn($pendingRequest);
 

@@ -10,6 +10,16 @@ namespace Emeq\ExactApi\Exceptions;
  */
 final class AuthenticationException extends ExactException
 {
+    /**
+     * Bij een API-call-fout (401/403) draagt dit de upstream-status zodat de Hub
+     * 403 (rechten/scope/division) van 401 (token vervangen) kan onderscheiden.
+     * Null voor token-exchange/refresh-fouten.
+     */
+    public function __construct(string $message, public readonly ?int $apiStatus = null)
+    {
+        parent::__construct($message);
+    }
+
     public static function notAuthenticated(string $credentialFingerprint): self
     {
         return new self(sprintf(
@@ -53,7 +63,10 @@ final class AuthenticationException extends ExactException
 
     public static function apiUnauthorized(int $status, string $body): self
     {
-        return new self(sprintf('Exact API gaf HTTP %d (token verlopen of onvoldoende rechten). Body: %s', $status, self::truncate($body)));
+        return new self(
+            sprintf('Exact API gaf HTTP %d (token verlopen of onvoldoende rechten). Body: %s', $status, self::truncate($body)),
+            $status,
+        );
     }
 
     private static function truncate(string $body, int $max = 500): string
