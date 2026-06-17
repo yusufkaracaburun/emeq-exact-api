@@ -40,7 +40,10 @@ final class Envelope
     }
 
     /**
-     * Het `ID`-veld van het eerste record — voor de externe referentie na een create.
+     * De externe referentie van het eerste record na een create.
+     *
+     * Probeert `EntryID` vóór `ID`: GeneralJournalEntries geven `EntryID` terug,
+     * SalesEntries/PurchaseEntries `ID`. Valt door naar de results-/lijst-varianten.
      *
      * @param  array<string, mixed>|null  $json
      */
@@ -56,8 +59,11 @@ final class Envelope
             return null;
         }
 
-        $id = $d['ID']
+        $id = $d['EntryID']
+            ?? $d['ID']
+            ?? ($d['results'][0]['EntryID'] ?? null)
             ?? ($d['results'][0]['ID'] ?? null)
+            ?? ($d[0]['EntryID'] ?? null)
             ?? ($d[0]['ID'] ?? null);
 
         return null !== $id ? (string) $id : null;

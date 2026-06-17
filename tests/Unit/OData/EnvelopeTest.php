@@ -33,6 +33,11 @@ it('extracts the first id from a create-response', function (): void {
         ->and(Envelope::firstId(['d' => ['results' => [['ID' => 'guid-3']]]]))->toBe('guid-3');
 });
 
+it('prefers EntryID over ID for general-journal creates', function (): void {
+    expect(Envelope::firstId(['d' => ['EntryID' => 'gj-1']]))->toBe('gj-1')
+        ->and(Envelope::firstId(['d' => ['EntryID' => 'gj-2', 'ID' => 'ignored']]))->toBe('gj-2');
+});
+
 it('returns null when no id is present', function (): void {
     expect(Envelope::firstId(null))->toBeNull()
         ->and(Envelope::firstId(['d' => ['Code' => '8000']]))->toBeNull();
