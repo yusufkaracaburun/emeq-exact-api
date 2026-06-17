@@ -12,9 +12,12 @@ use Saloon\Traits\Body\HasJsonBody;
 /**
  * Memoriaal-boeking — `POST generaljournalentry/GeneralJournalEntries`.
  *
- * Afwijkend van sales/purchase: het dagboek-veld heet `JournalCode` (niet
- * `Journal`) en het regelbedrag `AmountDC` (niet `AmountFC`). Geen relatie/EntryDate.
- * De caller levert al-geresolvede waarden in een neutrale vorm.
+ * Afwijkend van sales/purchase (live-geverifieerd): het dagboek-veld heet
+ * `JournalCode` (niet `Journal`), het regelbedrag `AmountDC` (niet `AmountFC`), en
+ * Exact weigert zowel een header-`Description` (HTTP 400) als een regel-`VATCode`
+ * ("Niet toegestaan: Btw-code") — beide worden hier dus niet verstuurd. Geen
+ * relatie/EntryDate. De caller levert al-geresolvede waarden in een neutrale vorm;
+ * een eventuele `vatCode` op de regel wordt genegeerd.
  */
 final class CreateGeneralJournalEntry extends BaseRequest implements HasBody
 {
@@ -27,7 +30,6 @@ final class CreateGeneralJournalEntry extends BaseRequest implements HasBody
      */
     public function __construct(
         private readonly string $journalCode,
-        private readonly ?string $description,
         private readonly array $lines,
     ) {
     }
@@ -44,12 +46,10 @@ final class CreateGeneralJournalEntry extends BaseRequest implements HasBody
     {
         return [
             'JournalCode'              => $this->journalCode,
-            'Description'              => $this->description,
             'GeneralJournalEntryLines' => array_map(
                 static fn (array $line): array => array_filter([
                     'Description' => $line['description'] ?? null,
                     'AmountDC'    => $line['amount'],
-                    'VATCode'     => $line['vatCode'] ?? null,
                     'GLAccount'   => $line['glAccount'] ?? null,
                 ], static fn (mixed $v): bool => null !== $v),
                 $this->lines,

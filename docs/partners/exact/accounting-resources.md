@@ -31,7 +31,8 @@ Afwijkingen om te onthouden (live geverifieerd):
   item-based `SalesInvoices` — accounting-sync zet boekhoud-data weg, het invoicen
   gebeurt bij de Consumer.
 - Memoriaal gebruikt `JournalCode` (niet `Journal`) en `AmountDC` (niet `AmountFC`),
-  en kent geen relatie/`EntryDate`.
+  kent geen relatie/`EntryDate`, en verstuurt géén header-`Description` of regel-`VATCode`
+  (Exact weigert beide).
 
 De caller levert al-geresolvede waarden (relatie-GUID, journaal-code, regels met
 `amount`/`vatCode`/`glAccount`) in een neutrale vorm; de request mapt die naar de

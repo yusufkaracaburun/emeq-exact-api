@@ -97,10 +97,9 @@ it('CreatePurchaseEntry maps neutral input onto the Exact PurchaseEntries body',
         ]);
 });
 
-it('CreateGeneralJournalEntry uses JournalCode and AmountDC, no relation', function (): void {
+it('CreateGeneralJournalEntry omits header Description and line VATCode', function (): void {
     $request = new CreateGeneralJournalEntry(
         journalCode: '90',
-        description: 'MEMO-1',
         lines: [
             ['description' => 'Regel 1', 'amount' => 12.34, 'vatCode' => '0', 'glAccount' => 'gl-guid'],
         ],
@@ -110,9 +109,8 @@ it('CreateGeneralJournalEntry uses JournalCode and AmountDC, no relation', funct
         ->and($request->resolveEndpoint())->toBe('/generaljournalentry/GeneralJournalEntries')
         ->and($request->body()->all())->toBe([
             'JournalCode'              => '90',
-            'Description'              => 'MEMO-1',
             'GeneralJournalEntryLines' => [
-                ['Description' => 'Regel 1', 'AmountDC' => 12.34, 'VATCode' => '0', 'GLAccount' => 'gl-guid'],
+                ['Description' => 'Regel 1', 'AmountDC' => 12.34, 'GLAccount' => 'gl-guid'],
             ],
         ]);
 });
