@@ -1,0 +1,256 @@
+# Emeq Hub × Exact Online — pass-through + accounting-sync smoke-tests
+#
+# Werkt met de VS Code "REST Client"- of JetBrains HTTP-client-extensie.
+# Dit test de HÚB-endpoints (/v1/*), niet de SDK direct.
+#
+# Setup:
+#  - PAT op de Consumer "Naschool" met abilities exact:read + exact:write.
+#  - X-Account-Id = Account.external_id ("school1"), gescoped op die Consumer.
+#  - Connection 1 levert de division (administratie_id = 4471372).
+#  - Mapping (connection.metadata.accounting_mapping): tarief 21 → VATCode "3";
+#    category "omzet"/"kosten" → GLAccount (onbekend → _default); relaties
+#    HUB-TEST-KLANT → klant-GUID, HUB-TEST-LEVERANCIER → leverancier-GUID;
+#    dagboeken sales=80 / purchase=70 / general=90.
+#
+# LET OP:
+#  - De TOKEN is een secret + leeft alleen lokaal (packages/ is gitignored).
+#    Na `migrate:fresh` opnieuw minten:
+#    php artisan tinker --execute '$c=App\Models\Account::find(1)->consumer; echo $c->createToken("exact-passthrough-demo",["exact:read","exact:write"])->plainTextToken;'
+#  - Idempotency-Key is verplicht op /v1/accounting/documents. {{$uuid}} (VS Code
+#    REST Client: {{$guid}}); varieer per logisch document — dezelfde sleutel = replay.
+
+@baseUrl = http://hub.emeq.test:8092
+@token = 1|wrPgnECgeICPLsrW2GfOu0L7jguKSEUn80Hjlwl10d8a5a79
+@accountId = school1
+# Minimale geldige PDF (base64) — hergebruikt als bijlage.
+@pdfBase64 = JVBERi0xLjEKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PmVuZG9iagozIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9NZWRpYUJveFswIDAgMjAwIDIwMF0+PmVuZG9iagp0cmFpbGVyPDwvUm9vdCAxIDAgUj4+CiUlRU9GCg==
+
+### 1. OAuth-init — maakt pending Connection + geeft de Exact authorize-URL terug
+#    (alternatief op de admin-connect; open de redirect_url in je browser)
+POST {{baseUrl}}/v1/oauth/exact/init
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "account_external_id": "{{accountId}}"
+}
+
+### 2. Pass-through GET — 1 CRM-relatie (division-scoped, read-only)
+GET {{baseUrl}}/v1/exact/crm/Accounts?$top=1
+Authorization: Bearer {{token}}
+Accept: application/json
+X-Account-Id: {{accountId}}
+
+### 3. Pass-through GET — divisions die deze koppeling ziet
+GET {{baseUrl}}/v1/exact/system/Divisions?$top=5
+Authorization: Bearer {{token}}
+Accept: application/json
+X-Account-Id: {{accountId}}
+
+### 4. Pass-through GET — alleen ID + Name (OData $select), netter resultaat
+GET {{baseUrl}}/v1/exact/crm/Accounts?$top=3&$select=ID,Name,Status
+Authorization: Bearer {{token}}
+Accept: application/json
+X-Account-Id: {{accountId}}
+
+### --- Named read-resources (eigen Scramble-groep; voeden de boekhoud-mapping-UI) ---
+#    Elk endpoint mapt 1-op-1 op één gedocumenteerde Exact OData-endpoint en logt
+#    de geraakte path in pass_through_calls, net als de generieke pass-through.
+
+### 5a. GL Accounts → Exact financial/GLAccounts
+GET {{baseUrl}}/v1/exact/gl-accounts?$top=5
+Authorization: Bearer {{token}}
+Accept: application/json
+X-Account-Id: {{accountId}}
+
+### 5b. VAT Codes → Exact vat/VATCodes (tarief→VATCode-referentie)
+GET {{baseUrl}}/v1/exact/vat-codes?$top=10
+Authorization: Bearer {{token}}
+Accept: application/json
+X-Account-Id: {{accountId}}
+
+### 5c. Relations → Exact crm/Accounts (relatie→GUID-referentie)
+GET {{baseUrl}}/v1/exact/relations?$top=5&$select=ID,Name,Code
+Authorization: Bearer {{token}}
+Accept: application/json
+X-Account-Id: {{accountId}}
+
+### 5d. Journals → Exact financial/Journals (doc-type→dagboek-referentie)
+GET {{baseUrl}}/v1/exact/journals?$top=10
+Authorization: Bearer {{token}}
+Accept: application/json
+X-Account-Id: {{accountId}}
+
+# =====================================================================
+#  ACCOUNTING-SYNC — v1-scenario's (consumer → Exact: verkoop + inkoop)
+# =====================================================================
+#  De scenario-naam staat in "number" → zichtbaar als Description in Exact
+#  (Verkoop/Inkoop > Openstaande posten) en als Document-Subject.
+#  Bijlage = canonical attachments[] (inline base64); de Hub doet ná de boeking
+#  automatisch de 2-staps Document + DocumentAttachment, gekoppeld via
+#  FinancialTransactionEntryID (boeking) + Account (relatie).
+#
+#  A = Verkoop (klant, debtor)  ·  B = Inkoop (leverancier, creditor)
+#  C = ad-hoc income → SalesEntry, expense → PurchaseEntry — live sinds #12
+#      (relatie + BTW + categorie; openstaande post later via bankreconciliatie).
+
+### A1. Verkoopfactuur + factuur-PDF → SalesEntry + Document (Verkoop openstaand)  ⚠️ SCHRIJFT
+POST {{baseUrl}}/v1/accounting/documents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+X-Account-Id: {{accountId}}
+Idempotency-Key: {{$uuid}}
+
+{
+  "type": "sales_invoice",
+  "external_id": "A1-INV",
+  "number": "A1 verkoop +bijlage",
+  "issue_date": "2026-06-17",
+  "party": { "role": "debtor", "name": "Hub Test Klant", "external_id": "HUB-TEST-KLANT" },
+  "lines": [
+    { "description": "Consultancy", "amount": 200, "tax_rate": 21, "category": "omzet" }
+  ],
+  "attachments": [
+    { "filename": "A1-factuur.pdf", "mime_type": "application/pdf", "content": "{{pdfBase64}}" }
+  ]
+}
+
+### A2. Verkoopfactuur ZÓNDER bijlage → SalesEntry, géén Document  ⚠️ SCHRIJFT
+POST {{baseUrl}}/v1/accounting/documents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+X-Account-Id: {{accountId}}
+Idempotency-Key: {{$uuid}}
+
+{
+  "type": "sales_invoice",
+  "external_id": "A2-INV",
+  "number": "A2 verkoop (geen bijlage)",
+  "issue_date": "2026-06-17",
+  "party": { "role": "debtor", "name": "Hub Test Klant", "external_id": "HUB-TEST-KLANT" },
+  "lines": [
+    { "description": "Consultancy", "amount": 120, "tax_rate": 21, "category": "omzet" }
+  ]
+}
+
+### A3. Creditnota (Invoice total < 0) + PDF → negatieve SalesEntry + Document  ⚠️ SCHRIJFT
+POST {{baseUrl}}/v1/accounting/documents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+X-Account-Id: {{accountId}}
+Idempotency-Key: {{$uuid}}
+
+{
+  "type": "credit_note",
+  "external_id": "A3-CN",
+  "number": "A3 credit +bijlage",
+  "issue_date": "2026-06-17",
+  "party": { "role": "debtor", "name": "Hub Test Klant", "external_id": "HUB-TEST-KLANT" },
+  "lines": [
+    { "description": "Creditering consultancy", "amount": -50, "tax_rate": 21, "category": "omzet" }
+  ],
+  "attachments": [
+    { "filename": "A3-creditnota.pdf", "mime_type": "application/pdf", "content": "{{pdfBase64}}" }
+  ]
+}
+
+### B1. Inkoopfactuur + self-billing-PDF → PurchaseEntry + Document (Inkoop openstaand)  ⚠️ SCHRIJFT
+POST {{baseUrl}}/v1/accounting/documents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+X-Account-Id: {{accountId}}
+Idempotency-Key: {{$uuid}}
+
+{
+  "type": "purchase_invoice",
+  "external_id": "B1-PINV",
+  "number": "B1 inkoop +bijlage",
+  "issue_date": "2026-06-17",
+  "party": { "role": "creditor", "name": "Hub Test Leverancier", "external_id": "HUB-TEST-LEVERANCIER" },
+  "lines": [
+    { "description": "Inkoop materialen", "amount": 250, "tax_rate": 21, "category": "kosten" }
+  ],
+  "attachments": [
+    { "filename": "B1-self-billing.pdf", "mime_type": "application/pdf", "content": "{{pdfBase64}}" }
+  ]
+}
+
+### B2. Inkoopfactuur ZÓNDER bijlage → PurchaseEntry, géén Document  ⚠️ SCHRIJFT
+POST {{baseUrl}}/v1/accounting/documents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+X-Account-Id: {{accountId}}
+Idempotency-Key: {{$uuid}}
+
+{
+  "type": "purchase_invoice",
+  "external_id": "B2-PINV",
+  "number": "B2 inkoop (geen bijlage)",
+  "issue_date": "2026-06-17",
+  "party": { "role": "creditor", "name": "Hub Test Leverancier", "external_id": "HUB-TEST-LEVERANCIER" },
+  "lines": [
+    { "description": "Inkoop diensten", "amount": 90, "tax_rate": 21, "category": "kosten" }
+  ]
+}
+
+### C1. Ad-hoc income → SalesEntry (income, debiteur; #12)  ⚠️ SCHRIJFT
+POST {{baseUrl}}/v1/accounting/documents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+X-Account-Id: {{accountId}}
+Idempotency-Key: {{$uuid}}
+
+{
+  "type": "income",
+  "external_id": "C1-INC",
+  "number": "C1 income (ad-hoc)",
+  "issue_date": "2026-06-17",
+  "party": { "role": "debtor", "name": "Hub Test Klant", "external_id": "HUB-TEST-KLANT" },
+  "lines": [
+    { "description": "Ad-hoc inkomst", "amount": 75, "tax_rate": 21, "category": "omzet" }
+  ]
+}
+
+### C2. Ad-hoc expense → PurchaseEntry (expense, crediteur; #12)  ⚠️ SCHRIJFT
+POST {{baseUrl}}/v1/accounting/documents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+X-Account-Id: {{accountId}}
+Idempotency-Key: {{$uuid}}
+
+{
+  "type": "expense",
+  "external_id": "C2-EXP",
+  "number": "C2 expense (ad-hoc)",
+  "issue_date": "2026-06-17",
+  "party": { "role": "creditor", "name": "Hub Test Leverancier", "external_id": "HUB-TEST-LEVERANCIER" },
+  "lines": [
+    { "description": "Kantoorkosten", "amount": 50, "tax_rate": 21, "category": "kosten" }
+  ]
+}
+
+### --- Foutpaden (verwachte 4xx) ---
+
+### F1. Ontbrekende X-Account-Id → 400 missing_account_header
+GET {{baseUrl}}/v1/exact/crm/Accounts?$top=1
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### F2. Onbekend account → 404 account_not_found
+GET {{baseUrl}}/v1/exact/crm/Accounts?$top=1
+Authorization: Bearer {{token}}
+Accept: application/json
+X-Account-Id: bestaat-niet
+
+### F3. Niet-toegestane method (HEAD) → 405 method_not_allowed
+HEAD {{baseUrl}}/v1/exact/crm/Accounts
+Authorization: Bearer {{token}}
+X-Account-Id: {{accountId}}

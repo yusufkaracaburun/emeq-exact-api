@@ -30,7 +30,10 @@ final class ExactWebhookSignature
      */
     public static function sign(string $contentJson, string $secret, string $algo = 'sha256'): string
     {
-        return base64_encode(hash_hmac($algo, $contentJson, $secret, true));
+        // Uppercase hex — live-geverifieerd tegen de echte Exact-wire (2026-06-18).
+        // Exact's docs noemen "byte array of length 40", maar de feitelijke HashCode
+        // is de 64-char uppercase hex van de HMAC-SHA256 (32 bytes), GEEN base64.
+        return mb_strtoupper(hash_hmac($algo, $contentJson, $secret));
     }
 
     /**
@@ -50,7 +53,10 @@ final class ExactWebhookSignature
             return false;
         }
 
-        return hash_equals(self::sign($content, $secret, $algo), $hashCode);
+        // Exact levert uppercase hex; normaliseer de ontvangen waarde zodat een
+        // (theoretische) lowercase-variant niet stilletjes faalt. hash_equals
+        // blijft constant-time over de strings.
+        return hash_equals(self::sign($content, $secret, $algo), mb_strtoupper($hashCode));
     }
 
     /**

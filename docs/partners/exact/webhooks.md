@@ -62,7 +62,7 @@ Endpoint-base: `{api_base_url}/api/v1/{division}` (de `ExactConnector`).
 
 ## HashCode (HMAC-verificatie)
 
-- **Algoritme**: `HashCode = base64( HMAC-SHA256( ContentJson, AppWebhookSecret ) )`.
+- **Algoritme**: `HashCode = UPPERCASE-HEX( HMAC-SHA256( ContentJson, AppWebhookSecret ) )` — 64 hex-chars (32 bytes). **Live-geverifieerd 2026-06-18** tegen een echte notificatie; GEEN base64.
 - **Over welke bytes**: de **letterlijke JSON van de `Content`-node, inclusief de
   buitenste accolades**, exact zoals ontvangen. Daarom de raw `Content`-substring
   uit de body extraheren — *niet* `json_decode`→re-encode (herordening/whitespace
@@ -74,14 +74,16 @@ Endpoint-base: `{api_base_url}/api/v1/{division}` (de `ExactConnector`).
   (encrypted), gehydrateerd naar `config('exact.webhook.secret')`.
 - **Compare**: constant-time (`hash_equals`).
 
-### ⚠️ Live te bevestigen (encoding)
+### Encoding (live-geverifieerd 2026-06-18)
 
-De **base64**-encoding volgt Exact's officiële .NET-sample
-(`Convert.ToBase64String(HMACSHA256(...))`). De user-spec noteerde "40-byte
-hashcode", wat niet rijmt met SHA256 (32 bytes → 44 base64-chars). Bevestig het
-wire-formaat (base64 vs hex, lengte, padding) tegen een **echte** Exact-ping op
-`hub-dev.emeq.nl` voordat de subscription productie-gebruikt wordt. Bij afwijking:
-één-regel-aanpassing in `ExactWebhookSignature::sign()`.
+Het wire-formaat is **uppercase hex** van de HMAC-SHA256 (64 chars), bevestigd
+tegen een echte GeneralJournalEntries-notificatie via `hub-dev.emeq.nl`:
+`E3F21665A785A0230924E555FAF1ABCE6BE021EA98674F5B041815C52CED1919`. Exact's doc
+("byte array of length 40") is misleidend — het is 32 bytes / 64 hex-chars, geen
+base64. `ExactWebhookSignature::sign()` levert daarom `strtoupper(hash_hmac(...))`;
+`verify()` normaliseert de ontvangen waarde naar uppercase vóór de constant-time
+compare. Payload-detail: `Action` is title-case (`Update`/`Delete`) en de
+Content-node draagt ook een `ClientId`.
 
 ## Middleware
 

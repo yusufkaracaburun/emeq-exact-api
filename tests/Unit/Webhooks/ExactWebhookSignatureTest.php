@@ -17,11 +17,25 @@ function exactWebhookBody(string $contentJson, ?string $hashCode = null): string
     return '{"Content":' . $contentJson . ',"HashCode":' . json_encode($hashCode) . '}';
 }
 
-it('signs the Content node as base64 HMAC-SHA256', function (): void {
-    $content = '{"Topic":"FinancialTransactions","Action":"UPDATE","Division":4471372}';
+it('signs the Content node as uppercase hex HMAC-SHA256', function (): void {
+    $content = '{"Topic":"GeneralJournalEntries","Action":"Update","Division":4471372}';
 
-    expect(ExactWebhookSignature::sign($content, EXACT_WEBHOOK_SECRET))
-        ->toBe(base64_encode(hash_hmac('sha256', $content, EXACT_WEBHOOK_SECRET, true)));
+    $signed = ExactWebhookSignature::sign($content, EXACT_WEBHOOK_SECRET);
+
+    // Live-geverifieerd: 64-char uppercase hex, GEEN base64 (Exact's "byte array
+    // of length 40"-doc is misleidend).
+    expect($signed)
+        ->toBe(mb_strtoupper(hash_hmac('sha256', $content, EXACT_WEBHOOK_SECRET)))
+        ->toMatch('/^[0-9A-F]{64}$/');
+});
+
+it('verifies a real-shape uppercase-hex HashCode from Exact', function (): void {
+    // Exacte wire-vorm zoals live ontvangen (uppercase hex in het HashCode-veld).
+    $content  = '{"Topic":"GeneralJournalEntries","ClientId":"e88e32c0","Division":4471372,"Action":"Update","Key":"fe20f499"}';
+    $hashCode = mb_strtoupper(hash_hmac('sha256', $content, EXACT_WEBHOOK_SECRET));
+    $body     = '{"Content":' . $content . ',"HashCode":' . json_encode($hashCode) . '}';
+
+    expect(ExactWebhookSignature::verify($body, EXACT_WEBHOOK_SECRET))->toBeTrue();
 });
 
 it('verifies a correctly signed notification', function (): void {
