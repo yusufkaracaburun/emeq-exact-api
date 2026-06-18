@@ -13,7 +13,9 @@ use Emeq\ExactApi\Data\ExactCredentials;
 use Emeq\ExactApi\Exceptions\MissingCredentialResolverException;
 use Emeq\ExactApi\Exceptions\MissingTokenStoreException;
 use Emeq\ExactApi\Http\ExactConnector;
+use Emeq\ExactApi\Http\Middleware\VerifyExactSignature;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
+use Illuminate\Routing\Router;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -24,6 +26,13 @@ class ExactServiceProvider extends PackageServiceProvider
         $package
             ->name('exact-api')
             ->hasConfigFile('exact');
+    }
+
+    public function packageBooted(): void
+    {
+        /** @var Router $router */
+        $router = $this->app->make(Router::class);
+        $router->aliasMiddleware('verify.exact.signature', VerifyExactSignature::class);
     }
 
     public function packageRegistered(): void

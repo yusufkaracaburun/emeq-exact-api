@@ -75,4 +75,20 @@ return [
         ],
     ],
 
+    'webhook' => [
+        /*
+         * App-brede HMAC-secret waarmee Exact elke inbound notificatie tekent:
+         * HashCode = base64(HMAC-SHA256) over de Content-node-JSON. Per-APP,
+         * niet per-Connection (Exact-eigenaardigheid). De Hub hydrateert deze
+         * uit ExactSettings (encrypted at rest) naar deze key; standalone valt
+         * 'ie terug op env.
+         */
+        'secret' => env('EXACT_WEBHOOK_SECRET'),
+
+        /*
+         * HMAC-algoritme voor de HashCode. Exact gebruikt SHA256.
+         */
+        'signature_algo' => 'sha256',
+    ],
+
 ];

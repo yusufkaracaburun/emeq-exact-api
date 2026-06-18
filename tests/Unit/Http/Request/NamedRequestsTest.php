@@ -3,15 +3,19 @@
 declare(strict_types=1);
 
 use Emeq\ExactApi\Enums\ExactDocumentType;
+use Emeq\ExactApi\Http\Request\Delete\DeleteWebhookSubscription;
 use Emeq\ExactApi\Http\Request\Read\GetGlAccounts;
 use Emeq\ExactApi\Http\Request\Read\GetJournals;
 use Emeq\ExactApi\Http\Request\Read\GetRelations;
 use Emeq\ExactApi\Http\Request\Read\GetVatCodes;
+use Emeq\ExactApi\Http\Request\Read\ListWebhookSubscriptions;
+use Emeq\ExactApi\Http\Request\Read\ListWebhookTopics;
 use Emeq\ExactApi\Http\Request\Write\CreateDocument;
 use Emeq\ExactApi\Http\Request\Write\CreateDocumentAttachment;
 use Emeq\ExactApi\Http\Request\Write\CreateGeneralJournalEntry;
 use Emeq\ExactApi\Http\Request\Write\CreatePurchaseEntry;
 use Emeq\ExactApi\Http\Request\Write\CreateSalesEntry;
+use Emeq\ExactApi\Http\Request\Write\CreateWebhookSubscription;
 use Saloon\Enums\Method;
 
 it('GetGlAccounts owns its path and passes the query through', function (): void {
@@ -184,4 +188,49 @@ it('ExactDocumentType maps the creatable Exact document-type ids', function (): 
     expect(ExactDocumentType::SalesInvoice->value)->toBe(10)
         ->and(ExactDocumentType::PurchaseInvoice->value)->toBe(20)
         ->and(ExactDocumentType::Miscellaneous->value)->toBe(55);
+});
+
+it('CreateWebhookSubscription sends only the required fields by default', function (): void {
+    $request = new CreateWebhookSubscription(
+        topic: 'FinancialTransactions',
+        callbackUrl: 'https://hub-dev.emeq.nl/webhooks/exact',
+    );
+
+    expect($request->getMethod())->toBe(Method::POST)
+        ->and($request->resolveEndpoint())->toBe('/webhooks/WebhookSubscriptions')
+        ->and($request->body()->all())->toBe([
+            'Topic'       => 'FinancialTransactions',
+            'CallbackURL' => 'https://hub-dev.emeq.nl/webhooks/exact',
+        ]);
+});
+
+it('CreateWebhookSubscription includes IsInstant and Description when set', function (): void {
+    $request = new CreateWebhookSubscription(
+        topic: 'Documents',
+        callbackUrl: 'https://hub-dev.emeq.nl/webhooks/exact',
+        isInstant: true,
+        description: 'Emeq Hub',
+    );
+
+    expect($request->body()->all())->toBe([
+        'Topic'       => 'Documents',
+        'CallbackURL' => 'https://hub-dev.emeq.nl/webhooks/exact',
+        'IsInstant'   => true,
+        'Description' => 'Emeq Hub',
+    ]);
+});
+
+it('webhook read requests own their division-relative path', function (string $class, string $endpoint): void {
+    expect((new $class())->resolveEndpoint())->toBe($endpoint)
+        ->and((new $class())->getMethod())->toBe(Method::GET);
+})->with([
+    'subscriptions' => [ListWebhookSubscriptions::class, '/webhooks/WebhookSubscriptions'],
+    'topics'        => [ListWebhookTopics::class, '/webhooks/WebhookTopics'],
+]);
+
+it('DeleteWebhookSubscription targets the guid-addressed resource', function (): void {
+    $request = new DeleteWebhookSubscription('11111111-2222-3333-4444-555555555555');
+
+    expect($request->getMethod())->toBe(Method::DELETE)
+        ->and($request->resolveEndpoint())->toBe("/webhooks/WebhookSubscriptions(guid'11111111-2222-3333-4444-555555555555')");
 });
