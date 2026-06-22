@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Emeq\ExactApi\Enums\ExactDocumentType;
 use Emeq\ExactApi\Http\Request\Delete\DeleteWebhookSubscription;
+use Emeq\ExactApi\Http\Request\Read\GetCostCenters;
+use Emeq\ExactApi\Http\Request\Read\GetCostUnits;
 use Emeq\ExactApi\Http\Request\Read\GetGlAccounts;
 use Emeq\ExactApi\Http\Request\Read\GetJournals;
 use Emeq\ExactApi\Http\Request\Read\GetRelations;
@@ -71,14 +73,48 @@ it('CreateSalesEntry drops null line fields but keeps the amount', function (): 
     ]);
 });
 
+it('CreateSalesEntry maps costCenter and costUnit onto the entry line', function (): void {
+    $request = new CreateSalesEntry(
+        customer: 'cust-guid',
+        entryDate: '2026-06-22',
+        journal: '70',
+        description: 'INV-3',
+        lines: [
+            ['amount' => 100.0, 'glAccount' => 'gl-guid', 'costCenter' => 'ADMIN', 'costUnit' => 'PROJ-X'],
+        ],
+    );
+
+    expect($request->body()->all()['SalesEntryLines'])->toBe([
+        ['AmountFC' => 100.0, 'GLAccount' => 'gl-guid', 'CostCenter' => 'ADMIN', 'CostUnit' => 'PROJ-X'],
+    ]);
+});
+
+it('CreatePurchaseEntry maps costCenter and costUnit onto the entry line', function (): void {
+    $request = new CreatePurchaseEntry(
+        supplier: 'supp-guid',
+        entryDate: '2026-06-22',
+        journal: '20',
+        description: 'PINV-3',
+        lines: [
+            ['amount' => 80.0, 'glAccount' => 'gl-guid', 'costCenter' => 'ADMIN', 'costUnit' => 'PROJ-X'],
+        ],
+    );
+
+    expect($request->body()->all()['PurchaseEntryLines'])->toBe([
+        ['AmountFC' => 80.0, 'GLAccount' => 'gl-guid', 'CostCenter' => 'ADMIN', 'CostUnit' => 'PROJ-X'],
+    ]);
+});
+
 it('read requests own their division-relative OData path', function (string $class, string $endpoint): void {
     expect((new $class())->resolveEndpoint())->toBe($endpoint)
         ->and((new $class())->getMethod())->toBe(Method::GET);
 })->with([
-    'gl accounts' => [GetGlAccounts::class, '/financial/GLAccounts'],
-    'vat codes'   => [GetVatCodes::class, '/vat/VATCodes'],
-    'relations'   => [GetRelations::class, '/crm/Accounts'],
-    'journals'    => [GetJournals::class, '/financial/Journals'],
+    'gl accounts'  => [GetGlAccounts::class, '/financial/GLAccounts'],
+    'vat codes'    => [GetVatCodes::class, '/vat/VATCodes'],
+    'relations'    => [GetRelations::class, '/crm/Accounts'],
+    'journals'     => [GetJournals::class, '/financial/Journals'],
+    'cost centers' => [GetCostCenters::class, '/financial/CostCenters'],
+    'cost units'   => [GetCostUnits::class, '/financial/CostUnits'],
 ]);
 
 it('CreatePurchaseEntry maps neutral input onto the Exact PurchaseEntries body', function (): void {

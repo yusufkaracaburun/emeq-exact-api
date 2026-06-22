@@ -14,6 +14,8 @@ Bron: officiële Exact REST API-referentie (HlpRestAPIResources). De write-endpo
 | `Read\GetVatCodes` | `vat/VATCodes` | BTW-codes (`Code`, `Description`, `Percentage`) |
 | `Read\GetRelations` | `crm/Accounts` | Relaties / debiteuren-crediteuren (`ID`, `Name`, `Code`) |
 | `Read\GetJournals` | `financial/Journals` | Dagboeken (`Code`, `Description`, `Type`) |
+| `Read\GetCostCenters` | `financial/CostCenters` | Kostenplaatsen (`Code`, `Description`) |
+| `Read\GetCostUnits` | `financial/CostUnits` | Kostendragers (`Code`, `Description`) |
 
 De OData-query (`$select`/`$filter`/`$top`/…) levert de caller; de request bezit
 alleen het pad. Responses worden gedecodeerd via `OData\Envelope::results()`.
@@ -33,6 +35,9 @@ Afwijkingen om te onthouden (live geverifieerd):
 - Memoriaal gebruikt `JournalCode` (niet `Journal`) en `AmountDC` (niet `AmountFC`),
   kent geen relatie/`EntryDate`, en verstuurt géén header-`Description` of regel-`VATCode`
   (Exact weigert beide).
+- Regel-`CostCenter`/`CostUnit` (kostenplaats/-drager, optioneel) dragen de **Code**
+  (`Edm.String`) — niet de GUID, anders dan `GLAccount`. Null-velden worden niet
+  meegestuurd. Geverifieerd tegen de OData-schema's van `SalesEntryLines`/`PurchaseEntryLines`.
 
 De caller levert al-geresolvede waarden (relatie-GUID, journaal-code, regels met
 `amount`/`vatCode`/`glAccount`) in een neutrale vorm; de request mapt die naar de
