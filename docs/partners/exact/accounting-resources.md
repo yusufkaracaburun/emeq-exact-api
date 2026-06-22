@@ -38,3 +38,15 @@ De caller levert al-geresolvede waarden (relatie-GUID, journaal-code, regels met
 `amount`/`vatCode`/`glAccount`) in een neutrale vorm; de request mapt die naar de
 Exact-veldnamen. Het create-antwoord levert de externe referentie via
 `OData\Envelope::firstId()`.
+
+### Relatie aanmaken
+
+| Request | Endpoint | Verplicht | Optioneel |
+|---|---|---|---|
+| `Write\CreateAccount` | `crm/Accounts` | `Name` | `Status`, `IsSales`, `IsSupplier`, `VATNumber` |
+
+`Name` is het enige verplichte veld (officiële Exact-referentie). Een debiteur krijgt
+`Status='C'` + `IsSales=true`, een crediteur `IsSupplier=true`; `VATNumber` is de
+stabiele dedup-sleutel als die er is. Null-velden worden niet meegestuurd. De Hub
+gebruikt dit voor lazy auto-create van een ontbrekende relatie tijdens een boeking
+(opt-in per Connection); de respons-`d.ID` (GUID) komt via `OData\Envelope::firstId()`.

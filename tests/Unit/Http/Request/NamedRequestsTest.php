@@ -10,6 +10,7 @@ use Emeq\ExactApi\Http\Request\Read\GetRelations;
 use Emeq\ExactApi\Http\Request\Read\GetVatCodes;
 use Emeq\ExactApi\Http\Request\Read\ListWebhookSubscriptions;
 use Emeq\ExactApi\Http\Request\Read\ListWebhookTopics;
+use Emeq\ExactApi\Http\Request\Write\CreateAccount;
 use Emeq\ExactApi\Http\Request\Write\CreateDocument;
 use Emeq\ExactApi\Http\Request\Write\CreateDocumentAttachment;
 use Emeq\ExactApi\Http\Request\Write\CreateGeneralJournalEntry;
@@ -136,6 +137,36 @@ it('CreateGeneralJournalEntry omits header Description and line VATCode', functi
                 ['Description' => 'Regel 1', 'AmountDC' => 12.34, 'GLAccount' => 'gl-guid'],
             ],
         ]);
+});
+
+it('CreateAccount marks a debtor as a customer with the sales flag', function (): void {
+    $request = new CreateAccount(
+        name: 'Acme BV',
+        status: 'C',
+        isSales: true,
+        vatNumber: 'NL000099998B57',
+    );
+
+    expect($request->getMethod())->toBe(Method::POST)
+        ->and($request->resolveEndpoint())->toBe('/crm/Accounts')
+        ->and($request->body()->all())->toBe([
+            'Name'      => 'Acme BV',
+            'Status'    => 'C',
+            'IsSales'   => true,
+            'VATNumber' => 'NL000099998B57',
+        ]);
+});
+
+it('CreateAccount marks a creditor as a supplier and drops null fields', function (): void {
+    $request = new CreateAccount(
+        name: 'Leverancier BV',
+        isSupplier: true,
+    );
+
+    expect($request->body()->all())->toBe([
+        'Name'       => 'Leverancier BV',
+        'IsSupplier' => true,
+    ]);
 });
 
 it('CreateDocument maps neutral input onto the Exact Documents body', function (): void {
