@@ -70,6 +70,33 @@ final class Envelope
     }
 
     /**
+     * Het mensleesbare boekstuknummer van het eerste record na een create — Exact's
+     * `EntryNumber` (`Edm.Int32`; voor verkoopfacturen het factuurnummer). Naast de
+     * `EntryID`-GUID het nummer dat een boekhouder herkent. Niet elke entity draagt 't
+     * → null.
+     *
+     * @param  array<string, mixed>|null  $json
+     */
+    public static function firstEntryNumber(?array $json): ?int
+    {
+        if (null === $json) {
+            return null;
+        }
+
+        $d = $json['d'] ?? null;
+
+        if ( ! is_array($d)) {
+            return null;
+        }
+
+        $number = $d['EntryNumber']
+            ?? ($d['results'][0]['EntryNumber'] ?? null)
+            ?? ($d[0]['EntryNumber'] ?? null);
+
+        return null !== $number ? (int) $number : null;
+    }
+
+    /**
      * De GUID van het Document dat Exact bij een create automatisch koppelt — staat op
      * `d.Document`. PurchaseEntries krijgen er één (inkoopfactuur-registratie); SalesEntries
      * niet → null. Hiermee koppelt de caller een bijlage aan het bestaande Document i.p.v.

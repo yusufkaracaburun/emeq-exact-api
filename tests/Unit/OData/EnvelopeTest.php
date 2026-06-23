@@ -43,6 +43,19 @@ it('returns null when no id is present', function (): void {
         ->and(Envelope::firstId(['d' => ['Code' => '8000']]))->toBeNull();
 });
 
+it('extracts the human EntryNumber from a create-response', function (): void {
+    expect(Envelope::firstEntryNumber(['d' => ['EntryID' => 'se-1', 'EntryNumber' => 60001]]))->toBe(60001)
+        ->and(Envelope::firstEntryNumber(['d' => [['EntryNumber' => 60002]]]))->toBe(60002)
+        ->and(Envelope::firstEntryNumber(['d' => ['results' => [['EntryNumber' => 60003]]]]))->toBe(60003)
+        ->and(Envelope::firstEntryNumber(['d' => ['EntryNumber' => '60004']]))->toBe(60004);
+});
+
+it('returns null EntryNumber when absent or shapeless', function (): void {
+    expect(Envelope::firstEntryNumber(null))->toBeNull()
+        ->and(Envelope::firstEntryNumber(['d' => ['EntryID' => 'se-1']]))->toBeNull()
+        ->and(Envelope::firstEntryNumber(['nope' => 1]))->toBeNull();
+});
+
 it('extracts the auto-linked Document ref (purchase) and null otherwise (sales)', function (): void {
     expect(Envelope::documentRef(['d' => ['EntryID' => 'pe-1', 'Document' => 'doc-guid']]))->toBe('doc-guid')
         ->and(Envelope::documentRef(['d' => ['EntryID' => 'se-1', 'Document' => null]]))->toBeNull()
