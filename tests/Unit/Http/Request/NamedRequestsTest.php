@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Emeq\ExactApi\Enums\ExactDocumentType;
+use Emeq\ExactApi\Http\Request\Delete\DeleteAccount;
+use Emeq\ExactApi\Http\Request\Delete\DeletePurchaseEntry;
+use Emeq\ExactApi\Http\Request\Delete\DeleteSalesEntry;
 use Emeq\ExactApi\Http\Request\Delete\DeleteWebhookSubscription;
 use Emeq\ExactApi\Http\Request\Read\GetCostCenters;
 use Emeq\ExactApi\Http\Request\Read\GetCostUnits;
@@ -317,3 +320,14 @@ it('DeleteWebhookSubscription targets the guid-addressed resource', function ():
     expect($request->getMethod())->toBe(Method::DELETE)
         ->and($request->resolveEndpoint())->toBe("/webhooks/WebhookSubscriptions(guid'11111111-2222-3333-4444-555555555555')");
 });
+
+it('delete requests target the guid-addressed resource', function (string $class, string $endpoint): void {
+    $request = new $class('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+
+    expect($request->getMethod())->toBe(Method::DELETE)
+        ->and($request->resolveEndpoint())->toBe($endpoint);
+})->with([
+    'sales entry'    => [DeleteSalesEntry::class, "/salesentry/SalesEntries(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
+    'purchase entry' => [DeletePurchaseEntry::class, "/purchaseentry/PurchaseEntries(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
+    'account'        => [DeleteAccount::class, "/crm/Accounts(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
+]);
