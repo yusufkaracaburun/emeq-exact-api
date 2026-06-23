@@ -22,6 +22,7 @@ use Emeq\ExactApi\Http\Request\Write\CreateGeneralJournalEntry;
 use Emeq\ExactApi\Http\Request\Write\CreatePurchaseEntry;
 use Emeq\ExactApi\Http\Request\Write\CreateSalesEntry;
 use Emeq\ExactApi\Http\Request\Write\CreateWebhookSubscription;
+use Emeq\ExactApi\Http\Request\Write\UpdateAccount;
 use Saloon\Enums\Method;
 
 it('GetGlAccounts owns its path and passes the query through', function (): void {
@@ -221,6 +222,32 @@ it('CreateAccount marks a creditor as a supplier and drops null fields', functio
     expect($request->body()->all())->toBe([
         'Name'       => 'Leverancier BV',
         'IsSupplier' => true,
+    ]);
+});
+
+it('UpdateAccount promotes a relation to supplier via PUT with the key in the URL', function (): void {
+    $request = new UpdateAccount(
+        id: 'rel-guid',
+        isSupplier: true,
+    );
+
+    expect($request->getMethod())->toBe(Method::PUT)
+        ->and($request->resolveEndpoint())->toBe("/crm/Accounts(guid'rel-guid')")
+        ->and($request->body()->all())->toBe([
+            'IsSupplier' => true,
+        ]);
+});
+
+it('UpdateAccount promotes a relation to customer and drops null fields', function (): void {
+    $request = new UpdateAccount(
+        id: 'rel-guid',
+        status: 'C',
+        isSales: true,
+    );
+
+    expect($request->body()->all())->toBe([
+        'Status'  => 'C',
+        'IsSales' => true,
     ]);
 });
 
