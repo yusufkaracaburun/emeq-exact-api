@@ -157,6 +157,22 @@ it('CreatePurchaseEntry adds YourRef when given and omits it otherwise', functio
         ->and($with->body()->all()['YourRef'])->toBe('system · PINV-1');
 });
 
+it('CreateSalesEntry adds DueDate when given and omits it otherwise', function (): void {
+    $without = new CreateSalesEntry(customer: 'c', entryDate: '2026-06-17', journal: '80', description: 'x', lines: [['amount' => 10]]);
+    $with    = new CreateSalesEntry(customer: 'c', entryDate: '2026-06-17', journal: '80', description: 'x', lines: [['amount' => 10]], dueDate: '2026-07-17');
+
+    expect($without->body()->all())->not->toHaveKey('DueDate')
+        ->and($with->body()->all()['DueDate'])->toBe('2026-07-17');
+});
+
+it('CreatePurchaseEntry adds DueDate when given and omits it otherwise', function (): void {
+    $without = new CreatePurchaseEntry(supplier: 's', entryDate: '2026-06-17', journal: '70', description: 'x', lines: [['amount' => 10]]);
+    $with    = new CreatePurchaseEntry(supplier: 's', entryDate: '2026-06-17', journal: '70', description: 'x', lines: [['amount' => 10]], dueDate: '2026-07-17');
+
+    expect($without->body()->all())->not->toHaveKey('DueDate')
+        ->and($with->body()->all()['DueDate'])->toBe('2026-07-17');
+});
+
 it('CreateGeneralJournalEntry omits header Description and line VATCode', function (): void {
     $request = new CreateGeneralJournalEntry(
         journalCode: '90',

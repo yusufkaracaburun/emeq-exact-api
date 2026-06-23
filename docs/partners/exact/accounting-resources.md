@@ -38,6 +38,9 @@ Afwijkingen om te onthouden (live geverifieerd):
 - Regel-`CostCenter`/`CostUnit` (kostenplaats/-drager, optioneel) dragen de **Code**
   (`Edm.String`) — niet de GUID, anders dan `GLAccount`. Null-velden worden niet
   meegestuurd. Geverifieerd tegen de OData-schema's van `SalesEntryLines`/`PurchaseEntryLines`.
+- Header-`DueDate` (`Edm.DateTime`, optioneel, writable op POST voor zowel `SalesEntries`
+  als `PurchaseEntries`) = vervaldatum van de openstaande post. Weggelaten → Exact leidt
+  'm af uit `EntryDate` + de `PaymentCondition` van de relatie.
 
 De caller levert al-geresolvede waarden (relatie-GUID, journaal-code, regels met
 `amount`/`vatCode`/`glAccount`) in een neutrale vorm; de request mapt die naar de

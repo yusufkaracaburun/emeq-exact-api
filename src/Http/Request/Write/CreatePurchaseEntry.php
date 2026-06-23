@@ -31,6 +31,7 @@ final class CreatePurchaseEntry extends BaseRequest implements HasBody
         private readonly ?string $description,
         private readonly array $lines,
         private readonly ?string $yourRef = null,
+        private readonly ?string $dueDate = null,
     ) {
     }
 
@@ -65,6 +66,12 @@ final class CreatePurchaseEntry extends BaseRequest implements HasBody
         // YourRef = herkomst/traceability (consumer + external_id), gezet door de caller.
         if (null !== $this->yourRef) {
             $body['YourRef'] = $this->yourRef;
+        }
+
+        // DueDate = vervaldatum van de openstaande post; weggelaten → Exact leidt 'm af
+        // uit EntryDate + PaymentCondition van de relatie.
+        if (null !== $this->dueDate) {
+            $body['DueDate'] = $this->dueDate;
         }
 
         return $body;
