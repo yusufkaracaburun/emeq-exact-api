@@ -110,4 +110,37 @@ final class Envelope
 
         return (null !== $ref && '' !== $ref) ? (string) $ref : null;
     }
+
+    /**
+     * De continuation-token van een gepagineerde GET-collectie, of null bij de laatste
+     * pagina.
+     *
+     * Exact hangt bij meer resultaten een `d.__next` aan de envelope: een volledige URL
+     * met daarin `$skiptoken`. Alleen die token is bruikbaar voor een vervolgrequest —
+     * de rest van die URL (base-url, division) kent de connector al, en overnemen zou
+     * betekenen dat je 'm buiten de connector om aanroept.
+     *
+     * Bewust met een regex en niet met `parse_str()`: die verminkt parameternamen met
+     * punten en spaties, en de waarde is URL-encoded OData-syntax (`guid'…'`).
+     *
+     * @param  array<string, mixed>|null  $json
+     */
+    public static function nextSkipToken(?array $json): ?string
+    {
+        $next = $json['d']['__next'] ?? null;
+
+        if ( ! is_string($next) || '' === $next) {
+            return null;
+        }
+
+        // Exact levert `__next` met een URL-encoded dollar (`%24skiptoken`); de letterlijke
+        // vorm komt voor in handgeschreven URL's. Allebei accepteren.
+        if (1 !== preg_match('/[?&](?:\$|%24)skiptoken=([^&]+)/i', $next, $matches)) {
+            return null;
+        }
+
+        $token = urldecode($matches[1]);
+
+        return '' !== $token ? $token : null;
+    }
 }

@@ -62,3 +62,30 @@ it('extracts the auto-linked Document ref (purchase) and null otherwise (sales)'
         ->and(Envelope::documentRef(['d' => ['EntryID' => 'se-2']]))->toBeNull()
         ->and(Envelope::documentRef(null))->toBeNull();
 });
+
+it('extracts the skiptoken from a paginated collection', function (): void {
+    $json = ['d' => [
+        'results' => [['ID' => 'a']],
+        '__next'  => 'https://start.exactonline.nl/api/v1/123/financial/GLAccounts?%24skiptoken=guid%27abc-123%27',
+    ]];
+
+    expect(Envelope::nextSkipToken($json))->toBe("guid'abc-123'");
+});
+
+it('returns null on the last page', function (): void {
+    expect(Envelope::nextSkipToken(['d' => ['results' => [['ID' => 'a']]]]))->toBeNull()
+        ->and(Envelope::nextSkipToken(['d' => []]))->toBeNull()
+        ->and(Envelope::nextSkipToken(null))->toBeNull();
+});
+
+it('ignores a __next without a usable skiptoken', function (): void {
+    expect(Envelope::nextSkipToken(['d' => ['__next' => 'https://start.exactonline.nl/api/v1/123/x']]))->toBeNull()
+        ->and(Envelope::nextSkipToken(['d' => ['__next' => '']]))->toBeNull()
+        ->and(Envelope::nextSkipToken(['d' => ['__next' => 12345]]))->toBeNull();
+});
+
+it('finds the skiptoken regardless of parameter order', function (): void {
+    $json = ['d' => ['__next' => 'https://x/y?%24select=ID&%24skiptoken=guid%27z%27&%24top=60']];
+
+    expect(Envelope::nextSkipToken($json))->toBe("guid'z'");
+});

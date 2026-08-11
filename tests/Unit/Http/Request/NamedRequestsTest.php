@@ -11,7 +11,9 @@ use Emeq\ExactApi\Http\Request\Read\GetCostCenters;
 use Emeq\ExactApi\Http\Request\Read\GetCostUnits;
 use Emeq\ExactApi\Http\Request\Read\GetGlAccounts;
 use Emeq\ExactApi\Http\Request\Read\GetJournals;
+use Emeq\ExactApi\Http\Request\Read\GetPurchaseEntries;
 use Emeq\ExactApi\Http\Request\Read\GetRelations;
+use Emeq\ExactApi\Http\Request\Read\GetSalesEntries;
 use Emeq\ExactApi\Http\Request\Read\GetVatCodes;
 use Emeq\ExactApi\Http\Request\Read\ListWebhookSubscriptions;
 use Emeq\ExactApi\Http\Request\Read\ListWebhookTopics;
@@ -358,3 +360,37 @@ it('delete requests target the guid-addressed resource', function (string $class
     'purchase entry' => [DeletePurchaseEntry::class, "/purchaseentry/PurchaseEntries(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
     'account'        => [DeleteAccount::class, "/crm/Accounts(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
 ]);
+
+it('GetSalesEntries reads the same resource CreateSalesEntry writes to', function (): void {
+    $request = new GetSalesEntries(['$expand' => 'SalesEntryLines', '$top' => 50]);
+
+    expect($request->getMethod())->toBe(Method::GET)
+        ->and($request->resolveEndpoint())->toBe('/salesentry/SalesEntries')
+        ->and($request->resolveEndpoint())->toBe((new CreateSalesEntry(
+            customer: 'c',
+            entryDate: '2026-01-01',
+            journal: '70',
+            description: null,
+            lines: [],
+        ))->resolveEndpoint())
+        ->and($request->query()->all())->toBe(['$expand' => 'SalesEntryLines', '$top' => 50]);
+});
+
+it('GetPurchaseEntries reads the same resource CreatePurchaseEntry writes to', function (): void {
+    $request = new GetPurchaseEntries(['$expand' => 'PurchaseEntryLines']);
+
+    expect($request->getMethod())->toBe(Method::GET)
+        ->and($request->resolveEndpoint())->toBe('/purchaseentry/PurchaseEntries')
+        ->and($request->resolveEndpoint())->toBe((new CreatePurchaseEntry(
+            supplier: 's',
+            entryDate: '2026-01-01',
+            journal: '20',
+            description: null,
+            lines: [],
+        ))->resolveEndpoint());
+});
+
+it('the entry read requests default to an empty query', function (): void {
+    expect((new GetSalesEntries())->query()->all())->toBe([])
+        ->and((new GetPurchaseEntries())->query()->all())->toBe([]);
+});
