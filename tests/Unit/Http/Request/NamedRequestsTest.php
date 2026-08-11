@@ -7,6 +7,8 @@ use Emeq\ExactApi\Http\Request\Delete\DeleteAccount;
 use Emeq\ExactApi\Http\Request\Delete\DeletePurchaseEntry;
 use Emeq\ExactApi\Http\Request\Delete\DeleteSalesEntry;
 use Emeq\ExactApi\Http\Request\Delete\DeleteWebhookSubscription;
+use Emeq\ExactApi\Http\Request\Read\GetBankEntries;
+use Emeq\ExactApi\Http\Request\Read\GetCashEntries;
 use Emeq\ExactApi\Http\Request\Read\GetCostCenters;
 use Emeq\ExactApi\Http\Request\Read\GetCostUnits;
 use Emeq\ExactApi\Http\Request\Read\GetGlAccounts;
@@ -393,4 +395,17 @@ it('GetPurchaseEntries reads the same resource CreatePurchaseEntry writes to', f
 it('the entry read requests default to an empty query', function (): void {
     expect((new GetSalesEntries())->query()->all())->toBe([])
         ->and((new GetPurchaseEntries())->query()->all())->toBe([]);
+});
+
+it('GetBankEntries owns the financialtransaction path', function (): void {
+    $request = new GetBankEntries(['$expand' => 'BankEntryLines', '$top' => 25]);
+
+    expect($request->getMethod())->toBe(Method::GET)
+        ->and($request->resolveEndpoint())->toBe('/financialtransaction/BankEntries')
+        ->and($request->query()->all())->toBe(['$expand' => 'BankEntryLines', '$top' => 25]);
+});
+
+it('GetCashEntries owns the financialtransaction path', function (): void {
+    expect((new GetCashEntries())->resolveEndpoint())->toBe('/financialtransaction/CashEntries')
+        ->and((new GetCashEntries())->query()->all())->toBe([]);
 });
