@@ -15,8 +15,12 @@ final class AuthenticationException extends ExactException
      * 403 (rechten/scope/division) van 401 (token vervangen) kan onderscheiden.
      * Null voor token-exchange/refresh-fouten.
      */
-    public function __construct(string $message, public readonly ?int $apiStatus = null)
-    {
+    public function __construct(
+        string $message,
+        public readonly ?int $apiStatus = null,
+        public readonly ?string $connectionRef = null,
+        public readonly bool $requiresReconsent = false,
+    ) {
         parent::__construct($message);
     }
 
@@ -38,14 +42,18 @@ final class AuthenticationException extends ExactException
         ));
     }
 
-    public static function refreshFailed(int $status, string $body, string $credentialFingerprint): self
+    public static function refreshFailed(int $status, string $body, string $credentialFingerprint, ?string $connectionRef = null): self
     {
-        return new self(sprintf(
-            'Exact refresh gaf HTTP %d voor connection (fp:%s) — refresh-token mogelijk al verbruikt/ingetrokken; her-consent nodig. Body: %s',
-            $status,
-            mb_substr($credentialFingerprint, 0, 12),
-            self::truncate($body),
-        ));
+        return new self(
+            sprintf(
+                'Exact refresh gaf HTTP %d voor connection (fp:%s) — refresh-token mogelijk al verbruikt/ingetrokken; her-consent nodig. Body: %s',
+                $status,
+                mb_substr($credentialFingerprint, 0, 12),
+                self::truncate($body),
+            ),
+            connectionRef: $connectionRef,
+            requiresReconsent: str_contains($body, 'invalid_grant'),
+        );
     }
 
     public static function refreshLockTimeout(string $credentialFingerprint): self

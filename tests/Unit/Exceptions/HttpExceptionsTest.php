@@ -56,3 +56,16 @@ it('AuthenticationException keeps the secret out and includes a fingerprint', fu
         ->and($e->getMessage())->toContain('HTTP 400')
         ->and($e->getMessage())->not->toContain('secret-value');
 });
+
+it('flags a refused refresh-token as requiring re-consent and names the connection', function (): void {
+    $e = AuthenticationException::refreshFailed(400, '{"error":"invalid_grant"}', 'fp', connectionRef: '42');
+
+    expect($e->requiresReconsent)->toBeTrue()
+        ->and($e->connectionRef)->toBe('42');
+});
+
+it('does not flag a transient refresh failure as requiring re-consent', function (): void {
+    $e = AuthenticationException::refreshFailed(500, 'gateway down', 'fp', connectionRef: '42');
+
+    expect($e->requiresReconsent)->toBeFalse();
+});

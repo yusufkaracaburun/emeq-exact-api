@@ -47,7 +47,7 @@ final class OAuthAuthenticator implements Authenticator
         private readonly string $lockPrefix = 'exact_refresh_',
         private readonly int $safetyMarginSeconds = 0,
         private readonly int $lockWaitSeconds = 8,
-        private readonly int $lockTtlSeconds = 10,
+        private readonly int $lockTtlSeconds = 30,
     ) {
     }
 
@@ -128,6 +128,7 @@ final class OAuthAuthenticator implements Authenticator
                 status: $response->status(),
                 body: $response->body(),
                 credentialFingerprint: $this->credentials->fingerprint(),
+                connectionRef: $this->credentials->connectionRef,
             );
         }
 
