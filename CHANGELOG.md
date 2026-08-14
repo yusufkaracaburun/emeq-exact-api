@@ -2,6 +2,11 @@
 
 Alle noemenswaardige wijzigingen aan `emeq/exact-api`. Volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/) en [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [0.6.0] - 2026-08-14
+
+### Added
+- `Http\Request\Write\CreateAccount` en `Write\UpdateAccount` dragen de volledige relatiekaart: `ChamberOfCommerce`, `AddressLine1`, `AddressLine2`, `Postcode`, `City`, `State`, `Country` (ISO-landcode), `Email`, `Phone`, `Website` — en `VATNumber` ook op `UpdateAccount`. Allemaal optioneel en ze vallen uit de body zodra ze null zijn, dus bestaande aanroepen sturen dezelfde body als voorheen. Veldnamen geverifieerd tegen een echte administratie.
+
 ## [0.5.0] - 2026-08-14
 
 ### Added
@@ -17,5 +22,6 @@ Alle noemenswaardige wijzigingen aan `emeq/exact-api`. Volgt [Keep a Changelog](
 
 Zie de git-tags (`git tag -l`) voor de geschiedenis vóór dit changelog werd bijgehouden.
 
+[0.6.0]: https://github.com/yusufkaracaburun/emeq-exact-api/releases/tag/v0.6.0
 [0.5.0]: https://github.com/yusufkaracaburun/emeq-exact-api/releases/tag/v0.5.0
 [0.2.13]: https://github.com/yusufkaracaburun/emeq-exact-api/releases/tag/v0.2.13
