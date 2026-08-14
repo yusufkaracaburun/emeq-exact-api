@@ -2,6 +2,12 @@
 
 Alle noemenswaardige wijzigingen aan `emeq/exact-api`. Volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/) en [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [0.5.0] - 2026-08-14
+
+### Added
+- `Http\Request\Read\GetDocuments` — `GET documents/Documents`. Tegenhanger van `Write\CreateDocument`; de OData-query (`$filter`/`$select`/`$skiptoken`) komt ongewijzigd van de caller, filteren op relatie (`Account`) of aanmaakdatum (`Created`) is caller-verantwoordelijkheid.
+- `Http\Request\Delete\DeleteDocument` — `DELETE documents/Documents(guid'{id}')`. Ruimt het document op dat een relatie blokkeert (`Kan niet verwijderen: Relatie - Gebruikt in: Documenten`).
+
 ## [0.2.13] - 2026-06-23
 
 ### Added
@@ -11,4 +17,5 @@ Alle noemenswaardige wijzigingen aan `emeq/exact-api`. Volgt [Keep a Changelog](
 
 Zie de git-tags (`git tag -l`) voor de geschiedenis vóór dit changelog werd bijgehouden.
 
+[0.5.0]: https://github.com/yusufkaracaburun/emeq-exact-api/releases/tag/v0.5.0
 [0.2.13]: https://github.com/yusufkaracaburun/emeq-exact-api/releases/tag/v0.2.13

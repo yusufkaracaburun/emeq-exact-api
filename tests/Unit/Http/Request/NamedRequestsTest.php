@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Emeq\ExactApi\Enums\ExactDocumentType;
 use Emeq\ExactApi\Http\Request\Delete\DeleteAccount;
+use Emeq\ExactApi\Http\Request\Delete\DeleteDocument;
 use Emeq\ExactApi\Http\Request\Delete\DeletePurchaseEntry;
 use Emeq\ExactApi\Http\Request\Delete\DeleteSalesEntry;
 use Emeq\ExactApi\Http\Request\Delete\DeleteWebhookSubscription;
@@ -11,6 +12,7 @@ use Emeq\ExactApi\Http\Request\Read\GetBankEntries;
 use Emeq\ExactApi\Http\Request\Read\GetCashEntries;
 use Emeq\ExactApi\Http\Request\Read\GetCostCenters;
 use Emeq\ExactApi\Http\Request\Read\GetCostUnits;
+use Emeq\ExactApi\Http\Request\Read\GetDocuments;
 use Emeq\ExactApi\Http\Request\Read\GetGlAccounts;
 use Emeq\ExactApi\Http\Request\Read\GetJournals;
 use Emeq\ExactApi\Http\Request\Read\GetPurchaseEntries;
@@ -123,7 +125,20 @@ it('read requests own their division-relative OData path', function (string $cla
     'journals'     => [GetJournals::class, '/financial/Journals'],
     'cost centers' => [GetCostCenters::class, '/financial/CostCenters'],
     'cost units'   => [GetCostUnits::class, '/financial/CostUnits'],
+    'documents'    => [GetDocuments::class, '/documents/Documents'],
 ]);
+
+it('GetDocuments owns its path and passes the query through', function (): void {
+    $request = new GetDocuments(['$filter' => "Account eq guid'cust-guid' and Created gt datetime'2026-08-01T00:00:00'", '$select' => 'ID,Subject,Created']);
+
+    expect($request->getMethod())->toBe(Method::GET)
+        ->and($request->resolveEndpoint())->toBe('/documents/Documents')
+        ->and($request->query()->all())->toBe(['$filter' => "Account eq guid'cust-guid' and Created gt datetime'2026-08-01T00:00:00'", '$select' => 'ID,Subject,Created']);
+});
+
+it('GetDocuments defaults to an empty query', function (): void {
+    expect((new GetDocuments())->query()->all())->toBe([]);
+});
 
 it('CreatePurchaseEntry maps neutral input onto the Exact PurchaseEntries body', function (): void {
     $request = new CreatePurchaseEntry(
@@ -361,6 +376,7 @@ it('delete requests target the guid-addressed resource', function (string $class
     'sales entry'    => [DeleteSalesEntry::class, "/salesentry/SalesEntries(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
     'purchase entry' => [DeletePurchaseEntry::class, "/purchaseentry/PurchaseEntries(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
     'account'        => [DeleteAccount::class, "/crm/Accounts(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
+    'document'       => [DeleteDocument::class, "/documents/Documents(guid'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')"],
 ]);
 
 it('GetSalesEntries reads the same resource CreateSalesEntry writes to', function (): void {
