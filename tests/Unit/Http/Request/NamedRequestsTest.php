@@ -244,6 +244,55 @@ it('CreateAccount marks a creditor as a supplier and drops null fields', functio
     ]);
 });
 
+it('CreateAccount carries the full relation card when the caller has one', function (): void {
+    $request = new CreateAccount(
+        name: 'Acme BV',
+        status: 'C',
+        isSales: true,
+        vatNumber: 'NL000099998B57',
+        chamberOfCommerce: '12345678',
+        addressLine1: 'Dorpsstraat 1',
+        addressLine2: 'Unit 4',
+        postcode: '1234 AB',
+        city: 'Amsterdam',
+        state: 'NH',
+        country: 'NL',
+        email: 'facturen@acme.nl',
+        phone: '+31201234567',
+        website: 'https://acme.nl',
+    );
+
+    expect($request->body()->all())->toBe([
+        'Name'              => 'Acme BV',
+        'Status'            => 'C',
+        'IsSales'           => true,
+        'VATNumber'         => 'NL000099998B57',
+        'ChamberOfCommerce' => '12345678',
+        'AddressLine1'      => 'Dorpsstraat 1',
+        'AddressLine2'      => 'Unit 4',
+        'Postcode'          => '1234 AB',
+        'City'              => 'Amsterdam',
+        'State'             => 'NH',
+        'Country'           => 'NL',
+        'Email'             => 'facturen@acme.nl',
+        'Phone'             => '+31201234567',
+        'Website'           => 'https://acme.nl',
+    ]);
+});
+
+it('UpdateAccount fills the relation card fields the caller passes', function (): void {
+    $request = new UpdateAccount(
+        id: 'rel-guid',
+        chamberOfCommerce: '12345678',
+        city: 'Amsterdam',
+    );
+
+    expect($request->body()->all())->toBe([
+        'ChamberOfCommerce' => '12345678',
+        'City'              => 'Amsterdam',
+    ]);
+});
+
 it('UpdateAccount promotes a relation to supplier via PUT with the key in the URL', function (): void {
     $request = new UpdateAccount(
         id: 'rel-guid',
