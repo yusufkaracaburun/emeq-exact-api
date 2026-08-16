@@ -337,6 +337,18 @@ it('CreateDocument maps neutral input onto the Exact Documents body', function (
         ]);
 });
 
+it('CreateDocument carries the document date so Exact does not stamp today', function (): void {
+    $request = new CreateDocument(
+        subject: 'INV-1',
+        type: ExactDocumentType::SalesInvoice->value,
+        account: 'cust-guid',
+        financialTransactionEntryId: 'entry-guid',
+        documentDate: '2026-05-13',
+    );
+
+    expect($request->body()->all()['DocumentDate'])->toBe('2026-05-13');
+});
+
 it('CreateDocument drops null Account and FinancialTransactionEntryID', function (): void {
     $request = new CreateDocument(
         subject: 'Los bonnetje',

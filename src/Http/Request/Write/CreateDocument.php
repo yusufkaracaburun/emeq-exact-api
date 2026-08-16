@@ -17,7 +17,10 @@ use Saloon\Traits\Body\HasJsonBody;
  * (`Subject`/`Type`/`Account`/`FinancialTransactionEntryID`); de caller levert
  * al-geresolvede waarden. `Account` (relatie-GUID) laat het document op de
  * relatiekaart verschijnen; `FinancialTransactionEntryID` koppelt het aan de
- * boeking. De respons-`d.ID` haal je op via OData\Envelope::firstId().
+ * boeking. `DocumentDate` (`Y-m-d`) is de datum van het stuk zelf; laat je 'm weg,
+ * dan stempelt Exact de dag van uploaden, en staat een factuur uit mei in het
+ * documentenoverzicht onder de dag waarop 'm geboekt werd. De respons-`d.ID` haal
+ * je op via OData\Envelope::firstId().
  */
 final class CreateDocument extends BaseRequest implements HasBody
 {
@@ -30,6 +33,7 @@ final class CreateDocument extends BaseRequest implements HasBody
         private readonly int $type,
         private readonly ?string $account = null,
         private readonly ?string $financialTransactionEntryId = null,
+        private readonly ?string $documentDate = null,
     ) {
     }
 
@@ -48,6 +52,7 @@ final class CreateDocument extends BaseRequest implements HasBody
             'Type'                        => $this->type,
             'Account'                     => $this->account,
             'FinancialTransactionEntryID' => $this->financialTransactionEntryId,
+            'DocumentDate'                => $this->documentDate,
         ], static fn (mixed $v): bool => null !== $v);
     }
 }

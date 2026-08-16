@@ -2,6 +2,13 @@
 
 Alle noemenswaardige wijzigingen aan `emeq/exact-api`. Volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/) en [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [0.7.0] - 2026-08-17
+
+### Added
+- `Http\Request\Write\CreateDocument` accepteert `documentDate` → `DocumentDate` (`Y-m-d`), optioneel en valt uit de body zodra het null is. Zonder datum stempelt Exact de dag van uploaden, waardoor een factuur uit mei in het documentenoverzicht onder de dag van boeken staat. Inkoopboekingen hadden hier geen last van omdat Exact daar zelf al een Document aanmaakt dat de boekingsdatum erft; verkoop heeft dat niet.
+
+  **Veldnaam nog niet tegen een echte administratie geverifieerd** — anders dan bij 0.6.0. Klopt `DocumentDate` niet, dan weigert Exact het Document en mislukt alleen de bijlage-upload; de boeking zelf landt gewoon.
+
 ## [0.6.0] - 2026-08-14
 
 ### Added
