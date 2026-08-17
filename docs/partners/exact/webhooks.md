@@ -17,7 +17,6 @@ Endpoint-base: `{api_base_url}/api/v1/{division}` (de `ExactConnector`).
 |---|---|---|
 | Aanmaken | `POST /webhooks/WebhookSubscriptions` | `Http\Request\Write\CreateWebhookSubscription` |
 | Lijst | `GET /webhooks/WebhookSubscriptions` | `Http\Request\Read\ListWebhookSubscriptions` |
-| Topics | `GET /webhooks/WebhookTopics` | `Http\Request\Read\ListWebhookTopics` |
 | Opzeggen | `DELETE /webhooks/WebhookSubscriptions(guid'{id}')` | `Http\Request\Delete\DeleteWebhookSubscription` |
 
 ### Create-body
@@ -35,7 +34,7 @@ Endpoint-base: `{api_base_url}/api/v1/{division}` (de `ExactConnector`).
 - **Duplicate**: een tweede subscribe op hetzelfde (topic, division) door een andere
   user van dezelfde klant geeft **HTTP 500 `'Data already exists'`**. Idempotent
   afhandelen, geen harde fout.
-- **Topics** (bevestig de exacte strings via `ListWebhookTopics`): o.a.
+- **Topics** (de catalogus bestaat alleen als doc-pagina — `HlpRestAPIResources.aspx?webhookfilter=yes`; `GET /webhooks/WebhookTopics` geeft 404): o.a.
   `FinancialTransactions`, `Documents`, `Accounts`, `Items`, `StockPositions`.
 
 ## Inbound notificatie

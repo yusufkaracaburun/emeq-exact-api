@@ -20,7 +20,6 @@ use Emeq\ExactApi\Http\Request\Read\GetRelations;
 use Emeq\ExactApi\Http\Request\Read\GetSalesEntries;
 use Emeq\ExactApi\Http\Request\Read\GetVatCodes;
 use Emeq\ExactApi\Http\Request\Read\ListWebhookSubscriptions;
-use Emeq\ExactApi\Http\Request\Read\ListWebhookTopics;
 use Emeq\ExactApi\Http\Request\Write\CreateAccount;
 use Emeq\ExactApi\Http\Request\Write\CreateDocument;
 use Emeq\ExactApi\Http\Request\Write\CreateDocumentAttachment;
@@ -418,7 +417,6 @@ it('webhook read requests own their division-relative path', function (string $c
         ->and((new $class())->getMethod())->toBe(Method::GET);
 })->with([
     'subscriptions' => [ListWebhookSubscriptions::class, '/webhooks/WebhookSubscriptions'],
-    'topics'        => [ListWebhookTopics::class, '/webhooks/WebhookTopics'],
 ]);
 
 it('DeleteWebhookSubscription targets the guid-addressed resource', function (): void {

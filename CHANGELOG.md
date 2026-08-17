@@ -2,6 +2,11 @@
 
 Alle noemenswaardige wijzigingen aan `emeq/exact-api`. Volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/) en [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [0.8.0] - 2026-08-17
+
+### Removed
+- `Http\Request\Read\ListWebhookTopics` — `GET /webhooks/WebhookTopics` bestaat niet en geeft 404. De topic-catalogus publiceert Exact alleen als doc-pagina (`HlpRestAPIResources.aspx?webhookfilter=yes`), dus de class kon nooit werken. Wie 'm aanriep kreeg een 404; wie 'm las dacht dat de catalogus opvraagbaar was.
+
 ## [0.7.0] - 2026-08-17
 
 ### Added
