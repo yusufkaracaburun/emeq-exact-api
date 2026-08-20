@@ -16,9 +16,20 @@ Bron: officiële Exact REST API-referentie (HlpRestAPIResources). De write-endpo
 | `Read\GetJournals` | `financial/Journals` | Dagboeken (`Code`, `Description`, `Type`) |
 | `Read\GetCostCenters` | `financial/CostCenters` | Kostenplaatsen (`Code`, `Description`) |
 | `Read\GetCostUnits` | `financial/CostUnits` | Kostendragers (`Code`, `Description`) |
+| `Read\GetFinancialPeriods` | `financial/FinancialPeriods` | Boekperiodes (`FinYear`, `FinPeriod`, `StartDate`, `EndDate`) |
 
 De OData-query (`$select`/`$filter`/`$top`/…) levert de caller; de request bezit
 alleen het pad. Responses worden gedecodeerd via `OData\Envelope::results()`.
+
+Bouw een `$filter` met `OData\Filter` in plaats van met stringconcatenatie —
+die escapet apostroffen en zet ID-velden als `guid'…'`. Datumvelden komen terug
+in Exact's `/Date(…)/`-notatie; lees ze met `OData\DateValue::parse()`.
+
+### Buiten de division
+
+| Request | Endpoint | Toelichting |
+|---|---|---|
+| `Read\GetMe` | `current/Me` | Ingelogde gebruiker (`CurrentDivision`, `UserID`) — stuur via `Exact::connector('current')` |
 
 ## Write (POST)
 

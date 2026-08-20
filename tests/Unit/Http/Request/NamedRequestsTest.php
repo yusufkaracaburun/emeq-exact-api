@@ -13,8 +13,10 @@ use Emeq\ExactApi\Http\Request\Read\GetCashEntries;
 use Emeq\ExactApi\Http\Request\Read\GetCostCenters;
 use Emeq\ExactApi\Http\Request\Read\GetCostUnits;
 use Emeq\ExactApi\Http\Request\Read\GetDocuments;
+use Emeq\ExactApi\Http\Request\Read\GetFinancialPeriods;
 use Emeq\ExactApi\Http\Request\Read\GetGlAccounts;
 use Emeq\ExactApi\Http\Request\Read\GetJournals;
+use Emeq\ExactApi\Http\Request\Read\GetMe;
 use Emeq\ExactApi\Http\Request\Read\GetPurchaseEntries;
 use Emeq\ExactApi\Http\Request\Read\GetRelations;
 use Emeq\ExactApi\Http\Request\Read\GetSalesEntries;
@@ -118,13 +120,14 @@ it('read requests own their division-relative OData path', function (string $cla
     expect((new $class())->resolveEndpoint())->toBe($endpoint)
         ->and((new $class())->getMethod())->toBe(Method::GET);
 })->with([
-    'gl accounts'  => [GetGlAccounts::class, '/financial/GLAccounts'],
-    'vat codes'    => [GetVatCodes::class, '/vat/VATCodes'],
-    'relations'    => [GetRelations::class, '/crm/Accounts'],
-    'journals'     => [GetJournals::class, '/financial/Journals'],
-    'cost centers' => [GetCostCenters::class, '/financial/CostCenters'],
-    'cost units'   => [GetCostUnits::class, '/financial/CostUnits'],
-    'documents'    => [GetDocuments::class, '/documents/Documents'],
+    'gl accounts'       => [GetGlAccounts::class, '/financial/GLAccounts'],
+    'vat codes'         => [GetVatCodes::class, '/vat/VATCodes'],
+    'relations'         => [GetRelations::class, '/crm/Accounts'],
+    'journals'          => [GetJournals::class, '/financial/Journals'],
+    'cost centers'      => [GetCostCenters::class, '/financial/CostCenters'],
+    'cost units'        => [GetCostUnits::class, '/financial/CostUnits'],
+    'documents'         => [GetDocuments::class, '/documents/Documents'],
+    'financial periods' => [GetFinancialPeriods::class, '/financial/FinancialPeriods'],
 ]);
 
 it('GetDocuments owns its path and passes the query through', function (): void {
@@ -483,4 +486,18 @@ it('GetBankEntries owns the financialtransaction path', function (): void {
 it('GetCashEntries owns the financialtransaction path', function (): void {
     expect((new GetCashEntries())->resolveEndpoint())->toBe('/financialtransaction/CashEntries')
         ->and((new GetCashEntries())->query()->all())->toBe([]);
+});
+
+it('GetFinancialPeriods passes the query through', function (): void {
+    $request = new GetFinancialPeriods(['$select' => 'FinYear,FinPeriod,StartDate,EndDate']);
+
+    expect($request->query()->all())->toBe(['$select' => 'FinYear,FinPeriod,StartDate,EndDate']);
+});
+
+it('GetMe resolves against the current-division connector', function (): void {
+    $request = new GetMe();
+
+    expect($request->getMethod())->toBe(Method::GET)
+        ->and($request->resolveEndpoint())->toBe('/Me')
+        ->and($request->query()->all())->toBe([]);
 });

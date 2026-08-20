@@ -2,6 +2,15 @@
 
 Alle noemenswaardige wijzigingen aan `emeq/exact-api`. Volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/) en [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [0.9.0] - 2026-08-20
+
+### Added
+- `OData\Filter` en `OData\Guid` — bouwen een `$filter`-expressie in plaats van 'm te concateneren. `Filter::eq()` verdubbelt apostroffen in stringwaarden en zet een `Guid` als `guid'…'`; `Guid` weigert alles wat geen UUID is. De Hub schreef dit met de hand op vijf plekken en vergat de escaping op één daarvan. De operator-set is bewust minimaal (`eq` + `raw`): alleen wat aantoonbaar gebruikt wordt. `substringof()`, `startswith()` en samengestelde and/or gaan via `Filter::raw()`, waar de caller de escaping bezit — Exact's exacte syntax daarvoor staat niet in de partner-docs die we hebben, en gokken hoort niet in een SDK.
+- `OData\DateValue::parse()` — leest Exact's `/Date(1755123456000)/` (Microsoft's Edm.DateTime-JSON) naar een `DateTimeImmutable` in UTC. Een offset-suffix wordt genegeerd: de epoch-waarde is al absoluut.
+- `OData\Envelope::errorMessage()` — haalt `error.message.value` uit een foutbody. Neemt anders dan de zusjes de rauwe string, omdat de exceptions hun `rawBody` ongedecodeerd dragen en "is dit JSON?" een decoder-vraag is, geen caller-vraag.
+- `Http\Request\Read\GetFinancialPeriods` — `GET financial/FinancialPeriods`. Bestond alleen als `RawExactRequest` met een handgeschreven pad in de Hub.
+- `Http\Request\Read\GetMe` — `GET current/Me`, te sturen via `Exact::connector('current')`. Levert `CurrentDivision` en `UserID` voor de OAuth-flow; de Hub deed deze call rechtstreeks met de HTTP-client, buiten de SDK om.
+
 ## [0.8.0] - 2026-08-17
 
 ### Removed

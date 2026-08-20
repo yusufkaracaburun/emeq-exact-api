@@ -143,4 +143,30 @@ final class Envelope
 
         return '' !== $token ? $token : null;
     }
+
+    /**
+     * De leesbare foutmelding uit Exact's error-envelope
+     * (`{"error":{"message":{"value":"..."}}}`), of null als het body geen
+     * herkenbare fout is.
+     *
+     * Neemt anders dan de andere methodes de rauwe body-string: de fout komt
+     * binnen via een exception die z'n `rawBody` ongedecodeerd draagt, en of dat
+     * überhaupt JSON is hoort deze decoder te bepalen — niet de caller.
+     */
+    public static function errorMessage(string $body): ?string
+    {
+        if ('' === $body) {
+            return null;
+        }
+
+        $decoded = json_decode($body, true);
+
+        if ( ! is_array($decoded)) {
+            return null;
+        }
+
+        $value = $decoded['error']['message']['value'] ?? null;
+
+        return (is_string($value) && '' !== $value) ? $value : null;
+    }
 }

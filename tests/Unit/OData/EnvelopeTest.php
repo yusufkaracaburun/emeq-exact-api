@@ -89,3 +89,18 @@ it('finds the skiptoken regardless of parameter order', function (): void {
 
     expect(Envelope::nextSkipToken($json))->toBe("guid'z'");
 });
+
+it('extracts the human-readable message from an Exact error envelope', function (): void {
+    $body = '{"error":{"code":"","message":{"lang":"nl-NL","value":"Het boekjaar is gesloten."}}}';
+
+    expect(Envelope::errorMessage($body))->toBe('Het boekjaar is gesloten.');
+});
+
+it('returns null when the body is empty, not json, or not an error envelope', function (string $body): void {
+    expect(Envelope::errorMessage($body))->toBeNull();
+})->with([
+    'empty'        => '',
+    'not json'     => '<html>502 Bad Gateway</html>',
+    'no error key' => '{"d":{"results":[]}}',
+    'blank value'  => '{"error":{"message":{"value":""}}}',
+]);
