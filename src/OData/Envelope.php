@@ -139,9 +139,7 @@ final class Envelope
             return null;
         }
 
-        $token = urldecode($matches[1]);
-
-        return '' !== $token ? $token : null;
+        return urldecode($matches[1]);
     }
 
     /**
